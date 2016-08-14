@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:paddingBottom="@dimen/activity_vertical_margin"
+    android:paddingLeft="@dimen/activity_horizontal_margin"
+    android:paddingRight="@dimen/activity_horizontal_margin"
+    android:paddingTop="@dimen/activity_vertical_margin"
+    app:layout_behavior="@string/appbar_scrolling_view_behavior"
+    tools:context=".ActivityLogin"
+    tools:showIn="@layout/activity_login">
+
+    <TextView
+        android:id="@+id/titleHeader"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="SISCONFE"
+        android:textAlignment="center"
+        android:textSize="20dp"
+        android:textStyle="bold" />
+
+    <RelativeLayout
+        android:id="@+id/relative_layout_conitaner_input_login"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_centerInParent="true">
+
+        <TextView
+            android:id="@+id/text_view_login_rp"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Digite seu Registro de Professor:"
+            android:textAlignment="center" />
+
+        <EditText
+            android:id="@+id/edit_text_login_rp"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/text_view_login_rp" />
+
+        <TextView
+            android:id="@+id/text_view_login_senha"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/edit_text_login_rp"
+            android:text="Digite sua Senha:"
+            android:textAlignment="center"
+            android:layout_marginTop="10dp"/>
+
+        <EditText
+            android:id="@+id/edit_text_login_senha"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/text_view_login_senha" />
+        <Button
+            android:id="@+id/button_login"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_alignParentLeft="true"
+            android:text="ENTRAR"
+            android:layout_below="@id/edit_text_login_senha"/>
+
+    </RelativeLayout>
+
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true">
+
+        <Button
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentLeft="true"
+            android:text="Recuperar Senha" />
+
+        <Button
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentRight="true"
+            android:text="Cadastrar-me" />
+    </RelativeLayout>
+</RelativeLayout>
