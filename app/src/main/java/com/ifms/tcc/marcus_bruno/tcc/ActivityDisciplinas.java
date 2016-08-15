@@ -12,7 +12,7 @@ import com.ifms.tcc.marcus_bruno.tcc.Models.Professor;
 
 public class ActivityDisciplinas extends AppCompatActivity {
 
-    Professor professor = ActivityLogin.professor;
+    Professor professor = ActivityLogin.PROFESSOR;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {

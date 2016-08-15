@@ -7,7 +7,6 @@ import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
-import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -17,37 +16,24 @@ import android.widget.EditText;
 import com.ifms.tcc.marcus_bruno.tcc.Models.Professor;
 import com.ifms.tcc.marcus_bruno.tcc.Utils.ServiceHandler;
 
-import org.apache.http.HttpEntity;
-import org.apache.http.HttpResponse;
 import org.apache.http.NameValuePair;
-import org.apache.http.client.ClientProtocolException;
-import org.apache.http.client.HttpClient;
-import org.apache.http.client.entity.UrlEncodedFormEntity;
-import org.apache.http.client.methods.HttpPost;
-import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.message.BasicNameValuePair;
-import org.apache.http.util.EntityUtils;
-import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.io.IOException;
-import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 
 public class ActivityLogin extends AppCompatActivity {
 
     Button btnLogin;
-    EditText edit_text_rp;
-    EditText edit_text_senha;
-    // contacts JSONArray
-    JSONArray login = null;
-    JSONObject status = null;
-    ArrayList<HashMap<String, String>> contactList;
-    public static Professor professor;
+    EditText edit_text_rp, edit_text_senha;
 
+    public static Professor PROFESSOR;
+    private static String RP, SENHA_PROFESSOR;
+    private static final String URL = "http://192.168.1.9:8000/todo/login/professor/";
+
+    private static AlertDialog.Builder builder;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -59,15 +45,24 @@ public class ActivityLogin extends AppCompatActivity {
         btnLogin = (Button) findViewById(R.id.button_login);
         edit_text_rp = (EditText) findViewById(R.id.edit_text_login_rp);
         edit_text_senha = (EditText) findViewById(R.id.edit_text_login_senha);
+        builder = new AlertDialog.Builder(ActivityLogin.this);
 
         btnLogin.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                new AutenticarLogin().execute();
+                RP = edit_text_rp.getText().toString();
+                SENHA_PROFESSOR = edit_text_senha.getText().toString();
+                if (!RP.equalsIgnoreCase("") && !SENHA_PROFESSOR.equalsIgnoreCase("")) {
+                    new AutenticarLogin().execute();
+                } else {
+                    builder.setMessage("Por favor, preencha todos os campos corretamente.")
+                            .setPositiveButton("OK", new DialogInterface.OnClickListener() {
+                                public void onClick(DialogInterface dialog, int id) {
+                                }
+                            }).create().show();
+                }
             }
         });
-
-        contactList = new ArrayList<HashMap<String, String>>();
     }
 
     @Override
@@ -94,84 +89,48 @@ public class ActivityLogin extends AppCompatActivity {
 
     public class AutenticarLogin extends AsyncTask<String, Integer, Integer> {
         @Override
-        protected void onPreExecute() {
-            //Codigo
-        }
+        protected void onPreExecute() {}
 
         @Override
         protected Integer doInBackground(String... params) {
-            //Codigo
-
-
-            String url = "http://192.168.1.9:8000/todo/login/professor/";
             List<NameValuePair> pairs = new ArrayList<NameValuePair>();
-            pairs.add(new BasicNameValuePair("rp", "123"));
-            pairs.add(new BasicNameValuePair("senha", "123"));
+            pairs.add(new BasicNameValuePair("rp", RP));
+            pairs.add(new BasicNameValuePair("senha", SENHA_PROFESSOR));
 
             // Creating service handler class instance
             ServiceHandler sh = new ServiceHandler();
-            // Making a request to url and getting response
-            String jsonStr = sh.makeServiceCall(url, ServiceHandler.POST, pairs);
             try {
-                JSONObject jsonObj = new JSONObject(jsonStr);
-                // Getting JSON Array node
-                login = jsonObj.getJSONArray("message");
+                // Making a request to url and getting response
+                JSONObject jsonObj = new JSONObject(sh.makeServiceCall(URL, ServiceHandler.POST, pairs));
 
-                if (status.toString().equalsIgnoreCase("1")) {
-
-                    // Getting JSON Array node
-//                    login = jsonObj.getJSONArray("message");
-
-                    if (!login.getJSONObject(0).toString().equalsIgnoreCase("false")) {
-
-                        // looping through All Contacts
-                        for (int i = 0; i < login.length(); i++) {
-                            JSONObject c = login.getJSONObject(i);
-                            professor = new Professor(c.getString("rp"), c.getString("nome"), c.getString("telefone"), c.getString("email"), c.getString("mac_address"));
-                        }
-                    }
-                } else {
-                    Log.e("ServiceHandler", "Couldn't get any data from the url");
-                    AlertDialog.Builder builder = new AlertDialog.Builder(ActivityLogin.this);
-                    builder.setMessage("Problemas de comunicação com o servidor! \n Entre em contato com o suporte, obrigado!")
-                            .setPositiveButton("OK", new DialogInterface.OnClickListener() {
-                                public void onClick(DialogInterface dialog, int id) {
-                                    // FIRE ZE MISSILES!
-                                }
-                            });
-                    builder.create().show();
+                //Get status of response;
+                String status = jsonObj.getJSONArray("status").getJSONObject(0).getString("status");
+                if (!status.equalsIgnoreCase("0")) {
+                    // Getting data teacher of array in position 0.
+                    JSONObject c = jsonObj.getJSONArray("message").getJSONObject(0);
+                    PROFESSOR = new Professor(c.getString("rp"), c.getString("nome"), c.getString("telefone"), c.getString("email"), c.getString("mac_address"));
                 }
             } catch (JSONException e) {
                 e.printStackTrace();
             }
-
-
             return null;
         }
 
         @Override
         protected void onPostExecute(Integer numero) {
-            //Codigo
-            if (professor != null) {
+            if (PROFESSOR != null) {
                 Intent i = new Intent(ActivityLogin.this, ActivityDisciplinas.class);
                 startActivity(i);
                 finish();
             } else {
-                AlertDialog.Builder builder = new AlertDialog.Builder(ActivityLogin.this);
                 builder.setMessage("Registro de Professor ou Senha incorretos!")
                         .setPositiveButton("OK", new DialogInterface.OnClickListener() {
                             public void onClick(DialogInterface dialog, int id) {
                                 // FIRE ZE MISSILES!
                             }
-                        });
-                builder.create().show();
-
+                        }).create().show();
             }
         }
-
-        protected void onProgressUpdate(Integer params) {
-            //Codigo
-        }
-
+        protected void onProgressUpdate(Integer params) {}
     }
 }
