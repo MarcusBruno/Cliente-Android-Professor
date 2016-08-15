@@ -29,7 +29,7 @@ public class ActivityLogin extends AppCompatActivity {
     Button btnLogin;
     EditText edit_text_rp, edit_text_senha;
 
-    public static Professor PROFESSOR;
+    protected static Professor PROFESSOR;
     private static String RP, SENHA_PROFESSOR;
     private static final String URL = "http://192.168.1.9:8000/todo/login/professor/";
 
@@ -125,9 +125,7 @@ public class ActivityLogin extends AppCompatActivity {
             } else {
                 builder.setMessage("Registro de Professor ou Senha incorretos!")
                         .setPositiveButton("OK", new DialogInterface.OnClickListener() {
-                            public void onClick(DialogInterface dialog, int id) {
-                                // FIRE ZE MISSILES!
-                            }
+                            public void onClick(DialogInterface dialog, int id) {}
                         }).create().show();
             }
         }
