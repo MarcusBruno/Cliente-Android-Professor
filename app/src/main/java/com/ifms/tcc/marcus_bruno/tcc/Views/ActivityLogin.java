@@ -1,4 +1,4 @@
-package com.ifms.tcc.marcus_bruno.tcc;
+package com.ifms.tcc.marcus_bruno.tcc.Views;
 
 import android.app.AlertDialog;
 import android.content.DialogInterface;
@@ -14,6 +14,7 @@ import android.widget.Button;
 import android.widget.EditText;
 
 import com.ifms.tcc.marcus_bruno.tcc.Models.Professor;
+import com.ifms.tcc.marcus_bruno.tcc.R;
 import com.ifms.tcc.marcus_bruno.tcc.Utils.ServiceHandler;
 
 import org.apache.http.NameValuePair;

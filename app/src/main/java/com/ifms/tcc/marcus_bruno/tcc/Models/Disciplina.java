@@ -1,9 +1,11 @@
 package com.ifms.tcc.marcus_bruno.tcc.Models;
 
+import java.io.Serializable;
+
 /**
  * Created by marcus-bruno on 8/14/16.
  */
-public class Disciplina {
+public class Disciplina implements Serializable {
     private String codigo;
     private String nome;
     private String descricao;

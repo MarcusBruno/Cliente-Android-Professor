@@ -1,5 +1,6 @@
-package com.ifms.tcc.marcus_bruno.tcc;
+package com.ifms.tcc.marcus_bruno.tcc.Views;
 
+import android.content.Intent;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
@@ -7,12 +8,14 @@ import android.support.v7.widget.Toolbar;
 import android.view.ContextMenu;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.ListView;
 import android.widget.Toast;
 
 import com.ifms.tcc.marcus_bruno.tcc.Models.Disciplina;
 import com.ifms.tcc.marcus_bruno.tcc.Models.Professor;
+import com.ifms.tcc.marcus_bruno.tcc.R;
 import com.ifms.tcc.marcus_bruno.tcc.Utils.ServiceHandler;
 
 import org.apache.http.NameValuePair;
@@ -27,10 +30,11 @@ import java.util.List;
 public class ActivityDisciplinas extends AppCompatActivity {
 
     protected static final Professor PROFESSOR = ActivityLogin.PROFESSOR;
-    private static final String URL = "http://192.168.1.9:8000/todo/disciplinas/professor/";
+    private final String URL = "http://192.168.1.9:8000/todo/disciplinas/professor/";
     private ArrayList<Disciplina> disciplinasList;
     private ArrayList<String> disciplinasListForAdapter;
-
+    private ArrayAdapter<String> adapter;
+    private int itemSelected;
     ListView disciplinasListView;
 
     @Override
@@ -42,8 +46,9 @@ public class ActivityDisciplinas extends AppCompatActivity {
 
 
         disciplinasListView = (ListView) findViewById(R.id.list_view_lista_disciplinas);
-
         registerForContextMenu(disciplinasListView);
+
+
 
         Toast.makeText(ActivityDisciplinas.this, "Olá professor " + PROFESSOR.getNome().split(" ")[0], Toast.LENGTH_LONG).show();
 
@@ -81,18 +86,21 @@ public class ActivityDisciplinas extends AppCompatActivity {
         @Override
         protected void onPostExecute(Integer numero) {
             //Implements the ArrayAdapter after get the data of Web Service.
-            ArrayAdapter<String> adapter = new ArrayAdapter<String>(ActivityDisciplinas.this, android.R.layout.simple_expandable_list_item_1, disciplinasListForAdapter);
+            ArrayAdapter<String> adapter = new ArrayAdapter<>(ActivityDisciplinas.this, android.R.layout.simple_expandable_list_item_1, disciplinasListForAdapter);
             disciplinasListView.setAdapter(adapter);
         }
 
-        protected void onProgressUpdate(Integer params) {
-        }
+        protected void onProgressUpdate(Integer params) {}
     }
 
     @Override
     public void onCreateContextMenu(ContextMenu menu, View v, ContextMenu.ContextMenuInfo menuInfo) {
         super.onCreateContextMenu(menu, v, menuInfo);
-        menu.setHeaderTitle("Opções");
+
+        AdapterView.AdapterContextMenuInfo acmi = (AdapterView.AdapterContextMenuInfo) menuInfo;
+        itemSelected = acmi.position;
+
+        menu.setHeaderTitle("Opções ");
         //GroupID - ItemId - OrderForId
         menu.add(0, 1, 0, "Realizar Chamada");
         menu.add(0, 2, 1, "Agendar Chamada");
@@ -101,8 +109,11 @@ public class ActivityDisciplinas extends AppCompatActivity {
 
     @Override
     public boolean onContextItemSelected(MenuItem item) {
+
         if (item.getItemId() == 1) {
-            Toast.makeText(getApplicationContext(), "Opc 1", Toast.LENGTH_LONG).show();
+            Intent i = new Intent(ActivityDisciplinas.this, ActivityDisciplinaAlunos.class);
+            i.putExtra("disciplina", disciplinasList.get(itemSelected));
+            startActivity(i);
         } else if (item.getItemId() == 2) {
             Toast.makeText(getApplicationContext(), "Opc 2", Toast.LENGTH_LONG).show();
         } else if (item.getItemId() == 3) {
