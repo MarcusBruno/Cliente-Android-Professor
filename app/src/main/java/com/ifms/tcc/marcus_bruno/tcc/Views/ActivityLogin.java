@@ -1,6 +1,7 @@
 package com.ifms.tcc.marcus_bruno.tcc.Views;
 
 import android.app.AlertDialog;
+import android.app.ProgressDialog;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.os.AsyncTask;
@@ -32,7 +33,9 @@ public class ActivityLogin extends AppCompatActivity {
 
     protected static Professor PROFESSOR;
     private static String RP, SENHA_PROFESSOR;
-    private static final String URL = "http://192.168.1.9:8000/todo/login/professor/";
+    private boolean CONEXAO;
+    ProgressDialog dialog;
+    private static final String URL = "http://192.168.1.2:8000/todo/login/professor/";
 
     private static AlertDialog.Builder builder;
 
@@ -90,7 +93,10 @@ public class ActivityLogin extends AppCompatActivity {
 
     public class AutenticarLogin extends AsyncTask<String, Integer, Integer> {
         @Override
-        protected void onPreExecute() {}
+        protected void onPreExecute() {
+            dialog = ProgressDialog.show(ActivityLogin.this, "",
+                    "Carregando...", true);
+        }
 
         @Override
         protected Integer doInBackground(String... params) {
@@ -102,34 +108,54 @@ public class ActivityLogin extends AppCompatActivity {
             ServiceHandler sh = new ServiceHandler();
             try {
                 // Making a request to url and getting response
-                JSONObject jsonObj = new JSONObject(sh.makeServiceCall(URL, ServiceHandler.POST, pairs));
-
-                //Get status of response;
-                String status = jsonObj.getJSONArray("status").getJSONObject(0).getString("status");
-                if (!status.equalsIgnoreCase("0")) {
-                    // Getting data teacher of array in position 0.
-                    JSONObject c = jsonObj.getJSONArray("message").getJSONObject(0);
-                    PROFESSOR = new Professor(c.getString("rp"), c.getString("nome"), c.getString("telefone"), c.getString("email"), c.getString("mac_address"));
+                String jsonStr = sh.makeServiceCall(URL, ServiceHandler.POST, pairs);
+                //Tratamento em caso da conexão falhar
+                if (jsonStr != null) {
+                    CONEXAO = true;
+                    JSONObject jsonObj = new JSONObject(jsonStr);
+                    //Tratamento em caso do objeto retornar null;
+                    if (!jsonObj.equals("")) {
+                        //Get status of response;
+                        String status = jsonObj.getJSONArray("status").getJSONObject(0).getString("status");
+                        if (!status.equalsIgnoreCase("0")) {
+                            // Getting data teacher of array in position 0.
+                            JSONObject c = jsonObj.getJSONArray("message").getJSONObject(0);
+                            PROFESSOR = new Professor(c.getString("rp"), c.getString("nome"), c.getString("telefone"), c.getString("email"), c.getString("mac_address"));
+                        }
+                    }
+                } else {
+                    CONEXAO = false;
                 }
             } catch (JSONException e) {
                 e.printStackTrace();
+
             }
             return null;
         }
 
         @Override
         protected void onPostExecute(Integer numero) {
+            dialog.dismiss();
             if (PROFESSOR != null) {
                 Intent i = new Intent(ActivityLogin.this, ActivityDisciplinas.class);
                 startActivity(i);
                 finish();
+            } else if (!CONEXAO) {
+                builder.setMessage("Falha na conexão com o servidor!")
+                        .setPositiveButton("OK", new DialogInterface.OnClickListener() {
+                            public void onClick(DialogInterface dialog, int id) {
+                            }
+                        }).create().show();
             } else {
                 builder.setMessage("Registro de Professor ou Senha incorretos!")
                         .setPositiveButton("OK", new DialogInterface.OnClickListener() {
-                            public void onClick(DialogInterface dialog, int id) {}
+                            public void onClick(DialogInterface dialog, int id) {
+                            }
                         }).create().show();
             }
         }
-        protected void onProgressUpdate(Integer params) {}
+
+        protected void onProgressUpdate(Integer params) {
+        }
     }
 }

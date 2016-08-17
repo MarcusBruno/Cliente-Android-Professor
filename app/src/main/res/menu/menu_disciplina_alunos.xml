@@ -4,8 +4,9 @@
     xmlns:tools="http://schemas.android.com/tools"
     tools:context=".Views.ActivityDisciplinaAlunos">
     <item
-        android:id="@+id/abrir_chamada"
+        android:id="@+id/fechar_chamada"
         android:orderInCategory="100"
-        android:title="Abrir a Chamada"
-        app:showAsAction="never" />
+        android:title="Fechar a Chamada"
+        android:icon="@mipmap/ic_alarm_off_white_36dp"
+        app:showAsAction="ifRoom" />
 </menu>

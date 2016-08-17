@@ -30,7 +30,7 @@ import java.util.List;
 public class ActivityDisciplinas extends AppCompatActivity {
 
     protected static final Professor PROFESSOR = ActivityLogin.PROFESSOR;
-    private final String URL = "http://192.168.1.9:8000/todo/disciplinas/professor/";
+    private final String URL = "http://192.168.1.2:8000/todo/disciplinas/professor/";
     private ArrayList<Disciplina> disciplinasList;
     private ArrayList<String> disciplinasListForAdapter;
     private ArrayAdapter<String> adapter;
@@ -111,9 +111,11 @@ public class ActivityDisciplinas extends AppCompatActivity {
     public boolean onContextItemSelected(MenuItem item) {
 
         if (item.getItemId() == 1) {
+
             Intent i = new Intent(ActivityDisciplinas.this, ActivityDisciplinaAlunos.class);
             i.putExtra("disciplina", disciplinasList.get(itemSelected));
             startActivity(i);
+
         } else if (item.getItemId() == 2) {
             Toast.makeText(getApplicationContext(), "Opc 2", Toast.LENGTH_LONG).show();
         } else if (item.getItemId() == 3) {
