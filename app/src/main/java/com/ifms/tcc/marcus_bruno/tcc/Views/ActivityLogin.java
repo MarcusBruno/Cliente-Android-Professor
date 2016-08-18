@@ -1,5 +1,6 @@
 package com.ifms.tcc.marcus_bruno.tcc.Views;
 
+import android.Manifest;
 import android.app.AlertDialog;
 import android.app.ProgressDialog;
 import android.content.DialogInterface;
@@ -16,7 +17,13 @@ import android.widget.EditText;
 
 import com.ifms.tcc.marcus_bruno.tcc.Models.Professor;
 import com.ifms.tcc.marcus_bruno.tcc.R;
+import com.ifms.tcc.marcus_bruno.tcc.Utils.Routes;
 import com.ifms.tcc.marcus_bruno.tcc.Utils.ServiceHandler;
+import com.karumi.dexter.Dexter;
+import com.karumi.dexter.MultiplePermissionsReport;
+import com.karumi.dexter.PermissionToken;
+import com.karumi.dexter.listener.PermissionRequest;
+import com.karumi.dexter.listener.multi.MultiplePermissionsListener;
 
 import org.apache.http.NameValuePair;
 import org.apache.http.message.BasicNameValuePair;
@@ -35,7 +42,6 @@ public class ActivityLogin extends AppCompatActivity {
     private static String RP, SENHA_PROFESSOR;
     private boolean CONEXAO;
     ProgressDialog dialog;
-    private static final String URL = "http://192.168.1.2:8000/todo/login/professor/";
 
     private static AlertDialog.Builder builder;
 
@@ -45,6 +51,8 @@ public class ActivityLogin extends AppCompatActivity {
         setContentView(R.layout.activity_login);
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
+
+        Dexter.initialize(ActivityLogin.this);
 
         btnLogin = (Button) findViewById(R.id.button_login);
         edit_text_rp = (EditText) findViewById(R.id.edit_text_login_rp);
@@ -67,6 +75,15 @@ public class ActivityLogin extends AppCompatActivity {
                 }
             }
         });
+
+
+        Dexter.checkPermissions(new MultiplePermissionsListener() {
+            @Override
+            public void onPermissionsChecked(MultiplePermissionsReport report) {/* ... */}
+
+            @Override
+            public void onPermissionRationaleShouldBeShown(List<PermissionRequest> permissions, PermissionToken token) {/* ... */}
+        }, Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.ACCESS_NETWORK_STATE, Manifest.permission.INTERNET, Manifest.permission.WRITE_EXTERNAL_STORAGE);
     }
 
     @Override
@@ -108,7 +125,7 @@ public class ActivityLogin extends AppCompatActivity {
             ServiceHandler sh = new ServiceHandler();
             try {
                 // Making a request to url and getting response
-                String jsonStr = sh.makeServiceCall(URL, ServiceHandler.POST, pairs);
+                String jsonStr = sh.makeServiceCall(Routes.getUrlLoginProfessor(), ServiceHandler.POST, pairs);
                 //Tratamento em caso da conexão falhar
                 if (jsonStr != null) {
                     CONEXAO = true;

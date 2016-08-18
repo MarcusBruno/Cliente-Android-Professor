@@ -1,8 +1,14 @@
 package com.ifms.tcc.marcus_bruno.tcc.Views;
 
+import android.Manifest;
 import android.content.Intent;
+import android.content.pm.PackageManager;
+import android.location.Location;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
+import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.view.ContextMenu;
@@ -13,9 +19,14 @@ import android.widget.ArrayAdapter;
 import android.widget.ListView;
 import android.widget.Toast;
 
+import com.google.android.gms.common.ConnectionResult;
+import com.google.android.gms.common.api.GoogleApiClient;
+import com.google.android.gms.location.LocationServices;
+import com.google.android.gms.maps.model.LatLng;
 import com.ifms.tcc.marcus_bruno.tcc.Models.Disciplina;
 import com.ifms.tcc.marcus_bruno.tcc.Models.Professor;
 import com.ifms.tcc.marcus_bruno.tcc.R;
+import com.ifms.tcc.marcus_bruno.tcc.Utils.Routes;
 import com.ifms.tcc.marcus_bruno.tcc.Utils.ServiceHandler;
 
 import org.apache.http.NameValuePair;
@@ -27,15 +38,16 @@ import org.json.JSONObject;
 import java.util.ArrayList;
 import java.util.List;
 
-public class ActivityDisciplinas extends AppCompatActivity {
+public class ActivityDisciplinas extends AppCompatActivity  {
 
     protected static final Professor PROFESSOR = ActivityLogin.PROFESSOR;
-    private final String URL = "http://192.168.1.2:8000/todo/disciplinas/professor/";
     private ArrayList<Disciplina> disciplinasList;
     private ArrayList<String> disciplinasListForAdapter;
     private ArrayAdapter<String> adapter;
     private int itemSelected;
     ListView disciplinasListView;
+   ;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -45,9 +57,9 @@ public class ActivityDisciplinas extends AppCompatActivity {
         setSupportActionBar(toolbar);
 
 
+
         disciplinasListView = (ListView) findViewById(R.id.list_view_lista_disciplinas);
         registerForContextMenu(disciplinasListView);
-
 
 
         Toast.makeText(ActivityDisciplinas.this, "Olá professor " + PROFESSOR.getNome().split(" ")[0], Toast.LENGTH_LONG).show();
@@ -55,9 +67,13 @@ public class ActivityDisciplinas extends AppCompatActivity {
         new getDisciplinas().execute();
     }
 
+
+
     public class getDisciplinas extends AsyncTask<String, Integer, Integer> {
         @Override
-        protected void onPreExecute() {}
+        protected void onPreExecute() {
+        }
+
         @Override
         protected Integer doInBackground(String... params) {
             // Creating service handler class instance
@@ -67,7 +83,7 @@ public class ActivityDisciplinas extends AppCompatActivity {
                 param.add(new BasicNameValuePair("rp", PROFESSOR.getRp()));
 
                 // Making a request to url and getting response
-                JSONArray jsonObj = new JSONArray(sh.makeServiceCall(URL, ServiceHandler.POST, param));
+                JSONArray jsonObj = new JSONArray(sh.makeServiceCall(Routes.getUrlBuscarDisciplinasProfessor(), ServiceHandler.POST, param));
                 disciplinasList = new ArrayList<>();
                 disciplinasListForAdapter = new ArrayList<>();
 
@@ -90,7 +106,8 @@ public class ActivityDisciplinas extends AppCompatActivity {
             disciplinasListView.setAdapter(adapter);
         }
 
-        protected void onProgressUpdate(Integer params) {}
+        protected void onProgressUpdate(Integer params) {
+        }
     }
 
     @Override
@@ -125,4 +142,6 @@ public class ActivityDisciplinas extends AppCompatActivity {
         }
         return true;
     }
+
+
 }
