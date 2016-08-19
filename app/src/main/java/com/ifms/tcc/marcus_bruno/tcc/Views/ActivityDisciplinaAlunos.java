@@ -13,6 +13,7 @@ import android.support.annotation.Nullable;
 import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.ArrayAdapter;
@@ -26,8 +27,8 @@ import com.ifms.tcc.marcus_bruno.tcc.Models.Aluno;
 import com.ifms.tcc.marcus_bruno.tcc.Models.Disciplina;
 import com.ifms.tcc.marcus_bruno.tcc.Models.Professor;
 import com.ifms.tcc.marcus_bruno.tcc.R;
-import com.ifms.tcc.marcus_bruno.tcc.Utils.ServiceHandler;
 import com.ifms.tcc.marcus_bruno.tcc.Utils.Routes;
+import com.ifms.tcc.marcus_bruno.tcc.Utils.ServiceHandler;
 
 import org.apache.http.NameValuePair;
 import org.apache.http.message.BasicNameValuePair;
@@ -43,23 +44,19 @@ import java.util.List;
 
 public class ActivityDisciplinaAlunos extends AppCompatActivity implements GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener {
 
-    private Location location;
-    private String idFrequency;
     private Disciplina disciplina;
+    private boolean openFrequency;
+    private String idFrequency;
+    private ListView alunosLV;
     private ArrayList<Aluno> alunos;
-    private ArrayList<String> alunosListForAdapter;
+    private ArrayList<String> alunosAdapter;
+    private AlertDialog.Builder builder;
     private GoogleApiClient mGoogleApiClient;
+    private Date dateTimeInicio, dateTimeFim;
     private MenuItem closeFrequencyAction, openFrequencyAction;
-
-    protected static boolean openFrequency;
-    private static AlertDialog.Builder builder;
+    private DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
+    private DateFormat hourFormat = new SimpleDateFormat("HH:mm:ss");
     protected static final Professor PROFESSOR = ActivityLogin.PROFESSOR;
-
-    ListView alunosListView;
-    DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
-    DateFormat hourFormat = new SimpleDateFormat("HH:mm:ss");
-    Date dateTimeInicio, dateTimeFim;
-
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -68,35 +65,22 @@ public class ActivityDisciplinaAlunos extends AppCompatActivity implements Googl
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
-        builder = new AlertDialog.Builder(ActivityDisciplinaAlunos.this);
-        alunosListView = (ListView) findViewById(R.id.list_view_lista_alunuos_disciplina);
-        mGoogleApiClient = new GoogleApiClient.Builder(this).addConnectionCallbacks(this).addOnConnectionFailedListener(this).addApi(LocationServices.API).build();
-        mGoogleApiClient.connect();
-
-
         Intent i = getIntent();
         disciplina = (Disciplina) i.getSerializableExtra("disciplina");
+        alunosLV = (ListView) findViewById(R.id.list_view_lista_alunuos_disciplina);
 
-        Toast.makeText(ActivityDisciplinaAlunos.this, disciplina.getNome(), Toast.LENGTH_SHORT).show();
+        // Create the location client to start receiving updates
+        mGoogleApiClient = new GoogleApiClient.Builder(this)
+                .addApi(LocationServices.API)
+                .addConnectionCallbacks(ActivityDisciplinaAlunos.this)
+                .addOnConnectionFailedListener(ActivityDisciplinaAlunos.this).build();builder = new AlertDialog.Builder(ActivityDisciplinaAlunos.this);
+
         new getAlunosDaDisciplina().execute();
     }
 
     @Override
-    protected void onStart() {
-        super.onStart();
-        mGoogleApiClient.connect();
-    }
-
-    @Override
-    protected void onStop() {
-        super.onStop();
-        if (mGoogleApiClient != null && mGoogleApiClient.isConnected()) {
-            mGoogleApiClient.disconnect();
-        }
-    }
-
-    @Override
     public boolean onCreateOptionsMenu(Menu menu) {
+        // Inflate the menu; this adds items to the action bar if it is present.
         getMenuInflater().inflate(R.menu.menu_disciplina_alunos, menu);
         closeFrequencyAction = menu.findItem(R.id.closeFrequency).setVisible(true);
         openFrequencyAction = menu.findItem(R.id.openFrequency).setVisible(false);
@@ -105,30 +89,29 @@ public class ActivityDisciplinaAlunos extends AppCompatActivity implements Googl
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
-
         switch (item.getItemId()) {
             case R.id.closeFrequency:
-                builder.setMessage("Tem certeza que deseja encerrar a chamada ?")
-                        .setPositiveButton("SIM", new DialogInterface.OnClickListener() {
+                builder.setMessage(R.string.message_close_frequency)
+                        .setPositiveButton(R.string.yes, new DialogInterface.OnClickListener() {
                             public void onClick(DialogInterface dialog, int id) {
                                 new fecharChamada().execute();
                                 closeFrequencyAction.setVisible(false);
                                 openFrequencyAction.setVisible(true);
                             }
-                        }).setNegativeButton("NÃO", new DialogInterface.OnClickListener() {
+                        }).setNegativeButton(R.string.no, new DialogInterface.OnClickListener() {
                     public void onClick(DialogInterface dialogInterface, int i) {
                     }
                 }).create().show();
                 return true;
             case R.id.openFrequency:
-                builder.setMessage("Tem certeza que deseja abrir a chamada ?")
-                        .setPositiveButton("SIM", new DialogInterface.OnClickListener() {
+                builder.setMessage(R.string.message_open_frequency)
+                        .setPositiveButton(R.string.yes, new DialogInterface.OnClickListener() {
                             public void onClick(DialogInterface dialog, int id) {
                                 new abrirChamada().execute();
                                 openFrequencyAction.setVisible(false);
                                 closeFrequencyAction.setVisible(true);
                             }
-                        }).setNegativeButton("NÃO", new DialogInterface.OnClickListener() {
+                        }).setNegativeButton(R.string.no, new DialogInterface.OnClickListener() {
                     public void onClick(DialogInterface dialogInterface, int i) {
                     }
                 }).create().show();
@@ -138,37 +121,62 @@ public class ActivityDisciplinaAlunos extends AppCompatActivity implements Googl
         }
     }
 
-    @Override
-    public void onBackPressed() {
-        super.onBackPressed();  // optional depending on your needs
-        Intent i = new Intent(ActivityDisciplinaAlunos.this, ActivityDisciplinas.class);
-        startActivity(i);
-        finish();
+    protected void onStart() {
+        super.onStart();
+        mGoogleApiClient.connect();
+    }
+
+    protected void onStop() {
+        if (mGoogleApiClient != null && mGoogleApiClient.isConnected()) {
+            mGoogleApiClient.disconnect();
+        }
+        super.onStop();
     }
 
     @Override
     public void onConnected(@Nullable Bundle bundle) {
-        habilitarPosicaoAtual();
         new abrirChamada().execute();
     }
 
     @Override
     public void onConnectionSuspended(int i) {
-        mGoogleApiClient.connect();
+        if (i == CAUSE_SERVICE_DISCONNECTED) {
+            Toast.makeText(this, "Disconnected. Please re-connect.", Toast.LENGTH_SHORT).show();
+        } else if (i == CAUSE_NETWORK_LOST) {
+            Toast.makeText(this, "Network lost. Please re-connect.", Toast.LENGTH_SHORT).show();
+        }
     }
 
     @Override
     public void onConnectionFailed(@NonNull ConnectionResult connectionResult) {
-        builder.setMessage("Houve uma falha de conexao. Tente novamente!")
-                .setPositiveButton("Ok", new DialogInterface.OnClickListener() {
-                    public void onClick(DialogInterface dialog, int id) {
-                        Intent i = new Intent(ActivityDisciplinaAlunos.this, ActivityDisciplinas.class);
-                        startActivity(i);
-                        finish();
-                    }
-                }).create().show();
     }
 
+    @Override
+    public void onBackPressed() {
+        if (mGoogleApiClient != null && mGoogleApiClient.isConnected()) {
+            mGoogleApiClient.disconnect();
+        }
+
+        if (openFrequency == true) {
+            builder.setMessage("A chamada será encerrada!")
+                    .setPositiveButton("OK", new DialogInterface.OnClickListener() {
+                        public void onClick(DialogInterface dialog, int id) {
+                            new fecharChamada().execute();
+
+                            Intent i = new Intent(ActivityDisciplinaAlunos.this, ActivityDisciplinas.class);
+                            startActivity(i);
+                            finish();
+                        }
+                    }).setNegativeButton("CANCELAR", new DialogInterface.OnClickListener() {
+                public void onClick(DialogInterface dialogInterface, int i) {
+                }
+            }).create().show();
+        } else {
+            Intent i = new Intent(ActivityDisciplinaAlunos.this, ActivityDisciplinas.class);
+            startActivity(i);
+            finish();
+        }
+    }
 
     public class getAlunosDaDisciplina extends AsyncTask<String, Integer, Integer> {
         @Override
@@ -186,13 +194,13 @@ public class ActivityDisciplinaAlunos extends AppCompatActivity implements Googl
                 // Making a request to url and getting response
                 JSONArray jsonObj = new JSONArray(sh.makeServiceCall(Routes.getUrlBuscarAlunos(), ServiceHandler.POST, param));
                 alunos = new ArrayList<>();
-                alunosListForAdapter = new ArrayList<>();
+                alunosAdapter = new ArrayList<>();
 
                 for (int i = 0; i < jsonObj.length(); i++) {
                     JSONObject c = jsonObj.getJSONObject(i);
                     Aluno a = new Aluno(c.getString("ra"), c.getString("nome"), c.getString("telefone"), c.getString("email"), c.getString("mac_address"));
                     alunos.add(a);
-                    alunosListForAdapter.add(a.getRa() + ": " + a.getNome());
+                    alunosAdapter.add(a.getRa() + ": " + a.getNome());
                 }
             } catch (JSONException e) {
                 e.printStackTrace();
@@ -202,8 +210,9 @@ public class ActivityDisciplinaAlunos extends AppCompatActivity implements Googl
 
         @Override
         protected void onPostExecute(Integer numero) {
-            ArrayAdapter<String> adapter = new ArrayAdapter<>(ActivityDisciplinaAlunos.this, android.R.layout.simple_expandable_list_item_1, alunosListForAdapter);
-            alunosListView.setAdapter(adapter);
+            //Implements the ArrayAdapter after get the data of Web Service.
+            ArrayAdapter<String> adapter = new ArrayAdapter<>(ActivityDisciplinaAlunos.this, android.R.layout.simple_expandable_list_item_1, alunosAdapter);
+            alunosLV.setAdapter(adapter);
         }
     }
 
@@ -214,26 +223,37 @@ public class ActivityDisciplinaAlunos extends AppCompatActivity implements Googl
 
         @Override
         protected Integer doInBackground(String... params) {
-            if (openFrequency == false) {
+            if (!openFrequency) {
                 dateTimeInicio = new Date();
 
-                ServiceHandler sh = new ServiceHandler();
-                try {
-                    List<NameValuePair> param = new ArrayList<NameValuePair>();
-                    param.add(new BasicNameValuePair("rp", PROFESSOR.getRp()));
-                    param.add(new BasicNameValuePair("disciplina", disciplina.getCodigo()));
-                    param.add(new BasicNameValuePair("horario_inicio", dateFormat.format(dateTimeInicio) + " " + hourFormat.format(dateTimeInicio)));
-                    param.add(new BasicNameValuePair("situacao", "1"));
-                    param.add(new BasicNameValuePair("latitude", location.getLatitude() + ""));
-                    param.add(new BasicNameValuePair("longitude", location.getLongitude() + ""));
+                Location mCurrentLocation = null;
+                if (ActivityCompat.checkSelfPermission(ActivityDisciplinaAlunos.this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(ActivityDisciplinaAlunos.this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+                }
+                mCurrentLocation = LocationServices.FusedLocationApi.getLastLocation(mGoogleApiClient);
 
-                    // Making a request to url and getting response
-                    JSONObject jsonObj = new JSONObject(sh.makeServiceCall(Routes.getUrlAbrirChamada(), ServiceHandler.POST, param));
-                    idFrequency = jsonObj.getJSONArray("return").getJSONObject(0).getString("id");
+                if (mCurrentLocation != null) {
+                    // Print current location if not null
+                    Log.d("DEBUG", "current location: " + mCurrentLocation.toString());
 
-                    openFrequency = true;
-                } catch (JSONException e) {
-                    e.printStackTrace();
+                    // Creating service handler class instance
+                    ServiceHandler sh = new ServiceHandler();
+                    try {
+                        List<NameValuePair> param = new ArrayList<NameValuePair>();
+                        param.add(new BasicNameValuePair("rp", PROFESSOR.getRp()));
+                        param.add(new BasicNameValuePair("disciplina", disciplina.getCodigo()));
+                        param.add(new BasicNameValuePair("horario_inicio", dateFormat.format(dateTimeInicio) + " " + hourFormat.format(dateTimeInicio)));
+                        param.add(new BasicNameValuePair("situacao", "1"));
+                        param.add(new BasicNameValuePair("latitude", mCurrentLocation.getLatitude() + ""));
+                        param.add(new BasicNameValuePair("longitude", mCurrentLocation.getLongitude() + ""));
+
+                        // Making a request to url and getting response
+                        JSONObject jsonObj = new JSONObject(sh.makeServiceCall(Routes.getUrlAbrirChamada(), ServiceHandler.POST, param));
+                        idFrequency = jsonObj.getJSONArray("return").getJSONObject(0).getString("id");
+
+                        openFrequency = true;
+                    } catch (JSONException e) {
+                        e.printStackTrace();
+                    }
                 }
             }
             return null;
@@ -241,14 +261,13 @@ public class ActivityDisciplinaAlunos extends AppCompatActivity implements Googl
 
         @Override
         protected void onPostExecute(Integer numero) {
-            if (openFrequency == true) {
-                dateTimeFim = dateTimeInicio;
-                dateTimeFim.setMinutes((dateTimeInicio.getMinutes() + 2));
-            }
+            dateTimeFim = dateTimeInicio;
+            dateTimeFim.setMinutes((dateTimeInicio.getMinutes() + 10));
         }
     }
 
     public class fecharChamada extends AsyncTask<String, Integer, Integer> {
+
         @Override
         protected void onPreExecute() {
         }
@@ -258,21 +277,17 @@ public class ActivityDisciplinaAlunos extends AppCompatActivity implements Googl
             if (new Date().getMinutes() < dateTimeFim.getMinutes()) {
                 dateTimeFim = new Date();
             }
+
             // Creating service handler class instance
             ServiceHandler sh = new ServiceHandler();
-            try {
-                List<NameValuePair> param = new ArrayList<NameValuePair>();
-                param.add(new BasicNameValuePair("horario_fim", dateFormat.format(dateTimeFim) + " " + hourFormat.format(dateTimeFim)));
-                param.add(new BasicNameValuePair("situacao", "0"));
-                param.add(new BasicNameValuePair("id", idFrequency));
+            List<NameValuePair> param = new ArrayList<NameValuePair>();
+            param.add(new BasicNameValuePair("horario_fim", dateFormat.format(dateTimeFim) + " " + hourFormat.format(dateTimeFim)));
+            param.add(new BasicNameValuePair("situacao", "0"));
+            param.add(new BasicNameValuePair("id", idFrequency));
 
-                // Making a request to url and getting response
-                JSONObject jsonObj = new JSONObject(sh.makeServiceCall(Routes.getUrlFecharChamada(), ServiceHandler.PUT, param));
-
-                openFrequency = false;
-            } catch (JSONException e) {
-                e.printStackTrace();
-            }
+            // Making a request to url and getting response
+            sh.makeServiceCall(Routes.getUrlFecharChamada(), ServiceHandler.PUT, param);
+            openFrequency = false;
             return null;
         }
 
@@ -281,18 +296,4 @@ public class ActivityDisciplinaAlunos extends AppCompatActivity implements Googl
         }
     }
 
-
-    private void habilitarPosicaoAtual() {
-        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-            // TODO: Consider calling
-            //    ActivityCompat#requestPermissions
-            // here to request the missing permissions, and then overriding
-            //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
-            //                                          int[] grantResults)
-            // to handle the case where the user grants the permission. See the documentation
-            // for ActivityCompat#requestPermissions for more details.
-            return;
-        }
-        location = LocationServices.FusedLocationApi.getLastLocation(mGoogleApiClient);
-    }
 }

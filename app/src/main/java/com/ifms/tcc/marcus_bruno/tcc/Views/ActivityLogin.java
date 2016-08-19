@@ -35,15 +35,13 @@ import java.util.List;
 
 public class ActivityLogin extends AppCompatActivity {
 
-    Button btnLogin;
-    EditText edit_text_rp, edit_text_senha;
-
-    protected static Professor PROFESSOR;
-    private static String RP, SENHA_PROFESSOR;
+    private Button loginBtn;
+    private EditText rpET, passET;
     private boolean CONEXAO;
-    ProgressDialog dialog;
-
-    private static AlertDialog.Builder builder;
+    private ProgressDialog dialog;
+    private String rp, passProfessor;
+    private AlertDialog.Builder builder;
+    protected static Professor PROFESSOR;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -53,30 +51,6 @@ public class ActivityLogin extends AppCompatActivity {
         setSupportActionBar(toolbar);
 
         Dexter.initialize(ActivityLogin.this);
-
-        btnLogin = (Button) findViewById(R.id.button_login);
-        edit_text_rp = (EditText) findViewById(R.id.edit_text_login_rp);
-        edit_text_senha = (EditText) findViewById(R.id.edit_text_login_senha);
-        builder = new AlertDialog.Builder(ActivityLogin.this);
-
-        btnLogin.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                RP = edit_text_rp.getText().toString();
-                SENHA_PROFESSOR = edit_text_senha.getText().toString();
-                if (!RP.equalsIgnoreCase("") && !SENHA_PROFESSOR.equalsIgnoreCase("")) {
-                    new AutenticarLogin().execute();
-                } else {
-                    builder.setMessage("Por favor, preencha todos os campos corretamente.")
-                            .setPositiveButton("OK", new DialogInterface.OnClickListener() {
-                                public void onClick(DialogInterface dialog, int id) {
-                                }
-                            }).create().show();
-                }
-            }
-        });
-
-
         Dexter.checkPermissions(new MultiplePermissionsListener() {
             @Override
             public void onPermissionsChecked(MultiplePermissionsReport report) {/* ... */}
@@ -84,47 +58,45 @@ public class ActivityLogin extends AppCompatActivity {
             @Override
             public void onPermissionRationaleShouldBeShown(List<PermissionRequest> permissions, PermissionToken token) {/* ... */}
         }, Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.ACCESS_NETWORK_STATE, Manifest.permission.INTERNET, Manifest.permission.WRITE_EXTERNAL_STORAGE);
+
+        loginBtn = (Button) findViewById(R.id.button_login);
+        rpET = (EditText) findViewById(R.id.edit_text_login_rp);
+        passET = (EditText) findViewById(R.id.edit_text_login_senha);
+        builder = new AlertDialog.Builder(ActivityLogin.this);
+
+        loginBtn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                rp = rpET.getText().toString();
+                passProfessor = passET.getText().toString();
+                if (!rp.equalsIgnoreCase("") && !passProfessor.equalsIgnoreCase("")) {
+                    new AutenticarLogin().execute();
+                } else {
+                    builder.setMessage(R.string.message_required_inputs_login)
+                            .setPositiveButton(R.string.ok, new DialogInterface.OnClickListener() {
+                                public void onClick(DialogInterface dialog, int id) {
+                                }
+                            }).create().show();
+                }
+            }
+        });
     }
 
-    @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
-        // Inflate the menu; this adds items to the action bar if it is present.
-        getMenuInflater().inflate(R.menu.menu_main, menu);
-        return true;
-    }
-
-    @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-        // Handle action bar item clicks here. The action bar will
-        // automatically handle clicks on the Home/Up button, so long
-        // as you specify a parent activity in AndroidManifest.xml.
-        int id = item.getItemId();
-
-        //noinspection SimplifiableIfStatement
-        if (id == R.id.action_settings) {
-            return true;
-        }
-
-        return super.onOptionsItemSelected(item);
-    }
 
     public class AutenticarLogin extends AsyncTask<String, Integer, Integer> {
         @Override
         protected void onPreExecute() {
-            dialog = ProgressDialog.show(ActivityLogin.this, "",
-                    "Carregando...", true);
+            dialog = ProgressDialog.show(ActivityLogin.this, "", "Carregando...", true);
         }
 
         @Override
         protected Integer doInBackground(String... params) {
             List<NameValuePair> pairs = new ArrayList<NameValuePair>();
-            pairs.add(new BasicNameValuePair("rp", RP));
-            pairs.add(new BasicNameValuePair("senha", SENHA_PROFESSOR));
+            pairs.add(new BasicNameValuePair("rp", rp));
+            pairs.add(new BasicNameValuePair("senha", passProfessor));
 
-            // Creating service handler class instance
             ServiceHandler sh = new ServiceHandler();
             try {
-                // Making a request to url and getting response
                 String jsonStr = sh.makeServiceCall(Routes.getUrlLoginProfessor(), ServiceHandler.POST, pairs);
                 //Tratamento em caso da conexão falhar
                 if (jsonStr != null) {
@@ -145,7 +117,6 @@ public class ActivityLogin extends AppCompatActivity {
                 }
             } catch (JSONException e) {
                 e.printStackTrace();
-
             }
             return null;
         }
@@ -158,21 +129,18 @@ public class ActivityLogin extends AppCompatActivity {
                 startActivity(i);
                 finish();
             } else if (!CONEXAO) {
-                builder.setMessage("Falha na conexão com o servidor!")
-                        .setPositiveButton("OK", new DialogInterface.OnClickListener() {
+                builder.setMessage(R.string.connection_failure)
+                        .setPositiveButton(R.string.ok, new DialogInterface.OnClickListener() {
                             public void onClick(DialogInterface dialog, int id) {
                             }
                         }).create().show();
             } else {
-                builder.setMessage("Registro de Professor ou Senha incorretos!")
-                        .setPositiveButton("OK", new DialogInterface.OnClickListener() {
+                builder.setMessage(R.string.incorrect_data_login)
+                        .setPositiveButton(R.string.ok, new DialogInterface.OnClickListener() {
                             public void onClick(DialogInterface dialog, int id) {
                             }
                         }).create().show();
             }
-        }
-
-        protected void onProgressUpdate(Integer params) {
         }
     }
 }

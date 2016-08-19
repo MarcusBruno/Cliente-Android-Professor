@@ -45,22 +45,23 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_below="@id/edit_text_login_rp"
+            android:layout_marginTop="10dp"
             android:text="Digite sua Senha:"
-            android:textAlignment="center"
-            android:layout_marginTop="10dp"/>
+            android:textAlignment="center" />
 
         <EditText
             android:id="@+id/edit_text_login_senha"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_below="@id/text_view_login_senha" />
+
         <Button
             android:id="@+id/button_login"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_alignParentLeft="true"
-            android:text="ENTRAR"
-            android:layout_below="@id/edit_text_login_senha"/>
+            android:layout_below="@id/edit_text_login_senha"
+            android:text="ENTRAR" />
 
     </RelativeLayout>
 

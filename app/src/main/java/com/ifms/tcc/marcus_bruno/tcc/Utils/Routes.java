@@ -5,11 +5,11 @@ package com.ifms.tcc.marcus_bruno.tcc.Utils;
  */
 public class Routes {
 
-    private static final String URL_LOGIN_PROFESSOR = "http://192.168.1.9:8000/todo/login/professor/";
-    private static final String URL_BUSCAR_ALUNOS = "http://192.168.1.9:8000/todo/disciplinas/alunos/";
-    private static final String URL_ABRIR_CHAMADA = "http://192.168.1.9:8000/todo/professor/abrir/chamada/";
-    private static final String URL_FECHAR_CHAMADA = "http://192.168.1.9:8000/todo/professor/fechar/chamada/";
-    private static final String URL_BUSCAR_DISCIPLINAS_PROFESSOR = "http://192.168.1.9:8000/todo/disciplinas/professor/";
+    private static final String URL_LOGIN_PROFESSOR = "http://138.68.7.207:8000/todo/login/professor/";
+    private static final String URL_BUSCAR_ALUNOS = "http://138.68.7.207:8000/todo/disciplinas/alunos/";
+    private static final String URL_ABRIR_CHAMADA = "http://138.68.7.207:8000/todo/professor/abrir/chamada/";
+    private static final String URL_FECHAR_CHAMADA = "http://138.68.7.207:8000/todo/professor/fechar/chamada/";
+    private static final String URL_BUSCAR_DISCIPLINAS_PROFESSOR = "http://138.68.7.207:8000/todo/disciplinas/professor/";
 
     public static String getUrlLoginProfessor() {
         return URL_LOGIN_PROFESSOR;
