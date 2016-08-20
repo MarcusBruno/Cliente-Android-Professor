@@ -235,6 +235,7 @@ public class ActivityDisciplinaAlunos extends AppCompatActivity implements Googl
                     // Print current location if not null
                     Log.d("DEBUG", "current location: " + mCurrentLocation.toString());
 
+
                     // Creating service handler class instance
                     ServiceHandler sh = new ServiceHandler();
                     try {
@@ -242,6 +243,12 @@ public class ActivityDisciplinaAlunos extends AppCompatActivity implements Googl
                         param.add(new BasicNameValuePair("rp", PROFESSOR.getRp()));
                         param.add(new BasicNameValuePair("disciplina", disciplina.getCodigo()));
                         param.add(new BasicNameValuePair("horario_inicio", dateFormat.format(dateTimeInicio) + " " + hourFormat.format(dateTimeInicio)));
+
+
+                        dateTimeFim = dateTimeInicio;
+                        dateTimeFim.setMinutes((dateTimeInicio.getMinutes() + 10));
+
+                        param.add(new BasicNameValuePair("horario_fim", dateFormat.format(dateTimeFim) + " " + hourFormat.format(dateTimeFim)));
                         param.add(new BasicNameValuePair("situacao", "1"));
                         param.add(new BasicNameValuePair("latitude", mCurrentLocation.getLatitude() + ""));
                         param.add(new BasicNameValuePair("longitude", mCurrentLocation.getLongitude() + ""));
@@ -261,8 +268,6 @@ public class ActivityDisciplinaAlunos extends AppCompatActivity implements Googl
 
         @Override
         protected void onPostExecute(Integer numero) {
-            dateTimeFim = dateTimeInicio;
-            dateTimeFim.setMinutes((dateTimeInicio.getMinutes() + 10));
         }
     }
 
@@ -274,14 +279,16 @@ public class ActivityDisciplinaAlunos extends AppCompatActivity implements Googl
 
         @Override
         protected Integer doInBackground(String... params) {
-            if (new Date().getMinutes() < dateTimeFim.getMinutes()) {
-                dateTimeFim = new Date();
-            }
 
             // Creating service handler class instance
             ServiceHandler sh = new ServiceHandler();
             List<NameValuePair> param = new ArrayList<NameValuePair>();
-            param.add(new BasicNameValuePair("horario_fim", dateFormat.format(dateTimeFim) + " " + hourFormat.format(dateTimeFim)));
+
+            if (new Date().getMinutes() < dateTimeFim.getMinutes()) {
+                dateTimeFim = new Date();
+                param.add(new BasicNameValuePair("horario_fim", dateFormat.format(dateTimeFim) + " " + hourFormat.format(dateTimeFim)));
+            }
+
             param.add(new BasicNameValuePair("situacao", "0"));
             param.add(new BasicNameValuePair("id", idFrequency));
 

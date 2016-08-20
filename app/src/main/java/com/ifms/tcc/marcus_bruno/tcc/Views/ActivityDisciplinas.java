@@ -85,9 +85,6 @@ public class ActivityDisciplinas extends AppCompatActivity  {
             ArrayAdapter<String> adapter = new ArrayAdapter<>(ActivityDisciplinas.this, android.R.layout.simple_expandable_list_item_1, disciplinasAdapter);
             disciplinasLV.setAdapter(adapter);
         }
-
-        protected void onProgressUpdate(Integer params) {
-        }
     }
 
     @Override
