@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    tools:context=".Views.ActivityDisciplinaAlunos">
+    <item
+        android:id="@+id/closeFrequency"
+        android:icon="@mipmap/ic_alarm_off_white_36dp"
+        android:orderInCategory="100"
+        android:title="Fechar a Chamada"
+        app:showAsAction="ifRoom" />
+    <item
+        android:id="@+id/openFrequency"
+        android:icon="@mipmap/ic_lock_open_white_36dp"
+        android:orderInCategory="100"
+        android:title="Abrir a Chamada"
+        app:showAsAction="ifRoom" />
+</menu>
