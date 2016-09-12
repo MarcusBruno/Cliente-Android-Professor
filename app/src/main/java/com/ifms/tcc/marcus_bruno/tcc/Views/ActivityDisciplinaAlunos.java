@@ -41,6 +41,8 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.Timer;
+import java.util.TimerTask;
 
 public class ActivityDisciplinaAlunos extends AppCompatActivity implements GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener {
 
@@ -52,11 +54,11 @@ public class ActivityDisciplinaAlunos extends AppCompatActivity implements Googl
     private ArrayList<String> alunosAdapter;
     private AlertDialog.Builder builder;
     private GoogleApiClient mGoogleApiClient;
-    private Date dateTimeInicio, dateTimeFim;
     private MenuItem closeFrequencyAction, openFrequencyAction;
-    private DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
-    private DateFormat hourFormat = new SimpleDateFormat("HH:mm:ss");
     protected static final Professor PROFESSOR = ActivityLogin.PROFESSOR;
+    private Timer timer = new Timer();
+    private ArrayList<Integer> seletedItems;
+    private Location mCurrentLocation;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -73,7 +75,9 @@ public class ActivityDisciplinaAlunos extends AppCompatActivity implements Googl
         mGoogleApiClient = new GoogleApiClient.Builder(this)
                 .addApi(LocationServices.API)
                 .addConnectionCallbacks(ActivityDisciplinaAlunos.this)
-                .addOnConnectionFailedListener(ActivityDisciplinaAlunos.this).build();builder = new AlertDialog.Builder(ActivityDisciplinaAlunos.this);
+                .addOnConnectionFailedListener(ActivityDisciplinaAlunos.this).build();
+
+
 
         new getAlunosDaDisciplina().execute();
     }
@@ -89,6 +93,7 @@ public class ActivityDisciplinaAlunos extends AppCompatActivity implements Googl
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
+        builder = new AlertDialog.Builder(ActivityDisciplinaAlunos.this);
         switch (item.getItemId()) {
             case R.id.closeFrequency:
                 builder.setMessage(R.string.message_close_frequency)
@@ -148,8 +153,7 @@ public class ActivityDisciplinaAlunos extends AppCompatActivity implements Googl
     }
 
     @Override
-    public void onConnectionFailed(@NonNull ConnectionResult connectionResult) {
-    }
+    public void onConnectionFailed(@NonNull ConnectionResult connectionResult) { }
 
     @Override
     public void onBackPressed() {
@@ -219,36 +223,26 @@ public class ActivityDisciplinaAlunos extends AppCompatActivity implements Googl
     public class abrirChamada extends AsyncTask<String, Integer, Integer> {
         @Override
         protected void onPreExecute() {
+            if (!mGoogleApiClient.isConnected()) {
+                mGoogleApiClient.connect();
+            }
         }
 
         @Override
         protected Integer doInBackground(String... params) {
             if (!openFrequency) {
-                dateTimeInicio = new Date();
 
-                Location mCurrentLocation = null;
                 if (ActivityCompat.checkSelfPermission(ActivityDisciplinaAlunos.this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(ActivityDisciplinaAlunos.this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
                 }
                 mCurrentLocation = LocationServices.FusedLocationApi.getLastLocation(mGoogleApiClient);
 
                 if (mCurrentLocation != null) {
-                    // Print current location if not null
-                    Log.d("DEBUG", "current location: " + mCurrentLocation.toString());
-
-
                     // Creating service handler class instance
                     ServiceHandler sh = new ServiceHandler();
                     try {
                         List<NameValuePair> param = new ArrayList<NameValuePair>();
                         param.add(new BasicNameValuePair("rp", PROFESSOR.getRp()));
                         param.add(new BasicNameValuePair("disciplina", disciplina.getCodigo()));
-                        param.add(new BasicNameValuePair("horario_inicio", dateFormat.format(dateTimeInicio) + " " + hourFormat.format(dateTimeInicio)));
-
-
-                        dateTimeFim = dateTimeInicio;
-                        dateTimeFim.setMinutes((dateTimeInicio.getMinutes() + 10));
-
-                        param.add(new BasicNameValuePair("horario_fim", dateFormat.format(dateTimeFim) + " " + hourFormat.format(dateTimeFim)));
                         param.add(new BasicNameValuePair("situacao", "1"));
                         param.add(new BasicNameValuePair("latitude", mCurrentLocation.getLatitude() + ""));
                         param.add(new BasicNameValuePair("longitude", mCurrentLocation.getLongitude() + ""));
@@ -256,8 +250,10 @@ public class ActivityDisciplinaAlunos extends AppCompatActivity implements Googl
                         // Making a request to url and getting response
                         JSONObject jsonObj = new JSONObject(sh.makeServiceCall(Routes.getUrlAbrirChamada(), ServiceHandler.POST, param));
                         idFrequency = jsonObj.getJSONArray("return").getJSONObject(0).getString("id");
+                        if (!idFrequency.equalsIgnoreCase("0")) {
+                            openFrequency = true;
+                        }
 
-                        openFrequency = true;
                     } catch (JSONException e) {
                         e.printStackTrace();
                     }
@@ -268,26 +264,31 @@ public class ActivityDisciplinaAlunos extends AppCompatActivity implements Googl
 
         @Override
         protected void onPostExecute(Integer numero) {
+            mGoogleApiClient.disconnect();
+
+            if (openFrequency == true) {
+                timer.schedule(new TimerTask() {
+                    public void run() {
+                        if (openFrequency == true) {
+                            new fecharChamada().execute();
+                        }
+                    }
+                }, 10000);
+            }
         }
     }
 
     public class fecharChamada extends AsyncTask<String, Integer, Integer> {
-
         @Override
         protected void onPreExecute() {
+            timer.purge();
         }
 
         @Override
         protected Integer doInBackground(String... params) {
-
             // Creating service handler class instance
             ServiceHandler sh = new ServiceHandler();
             List<NameValuePair> param = new ArrayList<NameValuePair>();
-
-            if (new Date().getMinutes() < dateTimeFim.getMinutes()) {
-                dateTimeFim = new Date();
-                param.add(new BasicNameValuePair("horario_fim", dateFormat.format(dateTimeFim) + " " + hourFormat.format(dateTimeFim)));
-            }
 
             param.add(new BasicNameValuePair("situacao", "0"));
             param.add(new BasicNameValuePair("id", idFrequency));
@@ -300,7 +301,92 @@ public class ActivityDisciplinaAlunos extends AppCompatActivity implements Googl
 
         @Override
         protected void onPostExecute(Integer numero) {
+            builder = new AlertDialog.Builder(ActivityDisciplinaAlunos.this);
+            closeFrequencyAction.setVisible(false);
+            openFrequencyAction.setVisible(false);
+            builder.setMessage("Chamada concluída com sucesso! Deseja adicionar algum aluno manualmente?")
+                    .setPositiveButton(R.string.yes, new DialogInterface.OnClickListener() {
+                        public void onClick(DialogInterface dialog, int id) {
+                            teste();
+                        }
+                    }).setNegativeButton(R.string.no, new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialog, int which) {
+                    finish();
+                }
+            }).create().show();
         }
     }
 
+    private void teste() {
+        final CharSequence[] items = alunosAdapter.toArray(new CharSequence[alunosAdapter.size()]);
+        seletedItems = new ArrayList<>();
+
+        AlertDialog dialog = new AlertDialog.Builder(this)
+                .setTitle("Lista de Presença - Adição Manual")
+                .setMultiChoiceItems(items, null, new DialogInterface.OnMultiChoiceClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int indexSelected, boolean isChecked) {
+                        if (isChecked) {
+                            seletedItems.add(indexSelected);
+                        } else if (seletedItems.contains(indexSelected)) {
+                            seletedItems.remove(Integer.valueOf(indexSelected));
+                        }
+                    }
+                }).setPositiveButton("Adicionar", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int id) {
+                        Toast.makeText(ActivityDisciplinaAlunos.this, seletedItems.toString(), Toast.LENGTH_SHORT).show();
+                        new adcPresencaManual().execute();
+                    }
+                }).setNegativeButton("Cancelar", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int id) {
+                        //  Your code when user clicked on Cancel
+                    }
+                }).create();
+        dialog.show();
+    }
+
+    public class adcPresencaManual extends AsyncTask<String, Integer, Integer> {
+        @Override
+        protected void onPreExecute() {
+            timer.purge();
+        }
+
+        @Override
+        protected Integer doInBackground(String... params) {
+            // Creating service handler class instance
+            ServiceHandler sh = new ServiceHandler();
+            int lengthItens = (seletedItems.size()-1);
+
+            while(lengthItens>=0){
+                List<NameValuePair> param = new ArrayList<NameValuePair>();
+                param.add(new BasicNameValuePair("tb_lista_freq_codigo_ra", alunosAdapter.get(seletedItems.get(lengthItens)).split(":")[0]));
+                param.add(new BasicNameValuePair("tb_lista_freq_codigo_rp", PROFESSOR.getRp()));
+                param.add(new BasicNameValuePair("tb_lista_freq_codigo_disciplina", disciplina.getCodigo()));
+                param.add(new BasicNameValuePair("tb_lista_freq_id_diario", idFrequency));
+                param.add(new BasicNameValuePair("tb_lista_freq_latitude_aluno", mCurrentLocation.getLatitude()+""));
+                param.add(new BasicNameValuePair("tb_lista_freq_longitude_aluno", mCurrentLocation.getLongitude()+""));
+                param.add(new BasicNameValuePair("tb_lista_freq_presenca", "1"));
+
+                // Making a request to url and getting response
+                sh.makeServiceCall(Routes.getUrlAdcPresencaAlunosManual(), ServiceHandler.POST, param);
+
+                lengthItens--;
+            }
+            return null;
+        }
+
+        @Override
+        protected void onPostExecute(Integer numero) {
+            builder = new AlertDialog.Builder(ActivityDisciplinaAlunos.this);
+            builder.setMessage("Chamada concluída com sucesso!")
+                    .setPositiveButton(R.string.ok, new DialogInterface.OnClickListener() {
+                        public void onClick(DialogInterface dialog, int id) {
+                            finish();
+                        }
+                    }).create().show();
+        }
+    }
 }

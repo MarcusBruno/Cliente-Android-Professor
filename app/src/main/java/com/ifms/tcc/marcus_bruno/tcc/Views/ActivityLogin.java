@@ -82,7 +82,6 @@ public class ActivityLogin extends AppCompatActivity {
         });
     }
 
-
     public class AutenticarLogin extends AsyncTask<String, Integer, Integer> {
         @Override
         protected void onPreExecute() {
@@ -142,5 +141,10 @@ public class ActivityLogin extends AppCompatActivity {
                         }).create().show();
             }
         }
+    }
+
+    @Override
+    public void onBackPressed() {
+        android.os.Process.killProcess(android.os.Process.myPid());
     }
 }

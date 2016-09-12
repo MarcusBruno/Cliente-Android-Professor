@@ -1,11 +1,14 @@
 package com.ifms.tcc.marcus_bruno.tcc.Views;
 
+import android.app.AlertDialog;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.view.ContextMenu;
+import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.AdapterView;
@@ -32,6 +35,7 @@ public class ActivityDisciplinas extends AppCompatActivity  {
 
     private int itemSelected;
     private ListView disciplinasLV;
+    private AlertDialog.Builder builder;
     private ArrayList<Disciplina> disciplinas;
     private ArrayList<String> disciplinasAdapter;
     protected static final Professor PROFESSOR = ActivityLogin.PROFESSOR;
@@ -45,8 +49,34 @@ public class ActivityDisciplinas extends AppCompatActivity  {
 
         disciplinasLV = (ListView) findViewById(R.id.list_view_lista_disciplinas);
         registerForContextMenu(disciplinasLV);
-
         new getDisciplinas().execute();
+    }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        // Inflate the menu; this adds items to the action bar if it is present.
+        getMenuInflater().inflate(R.menu.menu_disciplinas, menu);
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        builder = new AlertDialog.Builder(ActivityDisciplinas.this);
+        switch (item.getItemId()) {
+            case R.id.logout:
+                builder.setMessage("Você tem certeza que deseja se desconectar?")
+                        .setPositiveButton(R.string.yes, new DialogInterface.OnClickListener() {
+                            public void onClick(DialogInterface dialog, int id) {
+                                finish();
+                                Intent i = new Intent(ActivityDisciplinas.this, ActivityLogin.class);
+                                startActivity(i);
+                            }
+                        }).setNegativeButton(R.string.no, new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialogInterface, int i) {
+                    }
+                }).create().show();
+        }
+        return true;
     }
 
     public class getDisciplinas extends AsyncTask<String, Integer, Integer> {
