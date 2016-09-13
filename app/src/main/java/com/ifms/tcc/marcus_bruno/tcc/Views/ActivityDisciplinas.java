@@ -16,6 +16,7 @@ import android.widget.ArrayAdapter;
 import android.widget.ListView;
 import android.widget.Toast;
 
+import com.ifms.tcc.marcus_bruno.tcc.Models.Chamada;
 import com.ifms.tcc.marcus_bruno.tcc.Models.Disciplina;
 import com.ifms.tcc.marcus_bruno.tcc.Models.Professor;
 import com.ifms.tcc.marcus_bruno.tcc.R;
@@ -28,17 +29,24 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.sql.Date;
+import java.text.DateFormat;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.TimeZone;
 
 public class ActivityDisciplinas extends AppCompatActivity  {
 
+    private Chamada chamada;
     private int itemSelected;
     private ListView disciplinasLV;
     private AlertDialog.Builder builder;
     private ArrayList<Disciplina> disciplinas;
     private ArrayList<String> disciplinasAdapter;
     protected static final Professor PROFESSOR = ActivityLogin.PROFESSOR;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -49,7 +57,9 @@ public class ActivityDisciplinas extends AppCompatActivity  {
 
         disciplinasLV = (ListView) findViewById(R.id.list_view_lista_disciplinas);
         registerForContextMenu(disciplinasLV);
+
         new getDisciplinas().execute();
+        new checarChamadasAbertas().execute();
     }
 
     @Override
@@ -138,7 +148,7 @@ public class ActivityDisciplinas extends AppCompatActivity  {
             Intent i = new Intent(ActivityDisciplinas.this, ActivityDisciplinaAlunos.class);
             i.putExtra("disciplina", disciplinas.get(itemSelected));
             startActivity(i);
-
+            finish();
         } else if (item.getItemId() == 2) {
             Toast.makeText(getApplicationContext(), "Opc 2", Toast.LENGTH_LONG).show();
         } else if (item.getItemId() == 3) {
@@ -147,5 +157,93 @@ public class ActivityDisciplinas extends AppCompatActivity  {
             return false;
         }
         return true;
+    }
+
+
+    public class checarChamadasAbertas extends AsyncTask<String, Integer, Integer> {
+        private JSONObject c;
+
+        @Override
+        protected void onPreExecute() {
+        }
+
+        @Override
+        protected Integer doInBackground(String... params) {
+            // Creating service handler class instance
+            ServiceHandler sh = new ServiceHandler();
+            try {
+                List<NameValuePair> param = new ArrayList<NameValuePair>();
+                param.add(new BasicNameValuePair("rp", PROFESSOR.getRp()));
+
+                // Making a request to url and getting response
+                JSONObject jsonObj = new JSONObject(sh.makeServiceCall(Routes.getUrlChecarChamadaAberta(), ServiceHandler.POST, param));
+
+                String status = jsonObj.getString("status");
+                if (!status.equalsIgnoreCase("0")) {
+                    // Getting data teacher of array in position 0.
+                   c = jsonObj.getJSONArray("message").getJSONObject(0);
+
+                    SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
+                    formatter.setTimeZone(TimeZone.getTimeZone("UTC"));
+                    java.util.Date date=null;
+                    try {
+                        date = formatter.parse(c.getString("timestamp"));
+                        chamada = new Chamada(c.getString("id"), c.getString("rp"), c.getString("professor"), c.getString("codigo_disciplina"), c.getString("disciplina"),date);
+                    } catch (ParseException e) {
+                        e.printStackTrace();
+                    }
+                }
+            } catch (JSONException e) {
+                e.printStackTrace();
+            }
+            return null;
+        }
+
+        @Override
+        protected void onPostExecute(Integer numero) {
+            if(chamada != null){
+                builder = new AlertDialog.Builder(ActivityDisciplinas.this);
+                builder.setTitle("Atenção Professor " + chamada.getProfessor().split(" ")[0]+"!").setMessage("A chamada do dia " + chamada.getTimestamp().getDate()+"/"+chamada.getTimestamp().getMonth() + " ás " + chamada.getTimestamp().getHours()+":"+ chamada.getTimestamp().getMinutes() +" da disciplina de "+ chamada.getDisciplina() + " não foi encerrada. Ela será fechada agora automaticamente. Por favor evite que isso aconteça!")
+                        .setPositiveButton(R.string.ok, new DialogInterface.OnClickListener() {
+                            public void onClick(DialogInterface dialog, int id) {
+                                //Chamar método que fecha a chamada
+                                new fecharChamada().execute();
+                            }
+                        }).create().show();
+            }
+        }
+    }
+
+
+    public class fecharChamada extends AsyncTask<String, Integer, Integer> {
+        @Override
+        protected void onPreExecute() {
+        }
+
+        @Override
+        protected Integer doInBackground(String... params) {
+            // Creating service handler class instance
+            ServiceHandler sh = new ServiceHandler();
+            List<NameValuePair> param = new ArrayList<NameValuePair>();
+
+            param.add(new BasicNameValuePair("situacao", "0"));
+            param.add(new BasicNameValuePair("id", chamada.getId()));
+
+            // Making a request to url and getting response
+            sh.makeServiceCall(Routes.getUrlFecharChamada(), ServiceHandler.PUT, param);
+            return null;
+        }
+
+        @Override
+        protected void onPostExecute(Integer numero) {
+            builder = new AlertDialog.Builder(ActivityDisciplinas.this);
+            builder.setMessage("Chamada encerrada com sucesso!")
+                    .setPositiveButton(R.string.ok, new DialogInterface.OnClickListener() {
+                        public void onClick(DialogInterface dialog, int id) {
+                            chamada = null;
+                            new checarChamadasAbertas().execute();
+                        }
+                    }).create().show();
+        }
     }
 }

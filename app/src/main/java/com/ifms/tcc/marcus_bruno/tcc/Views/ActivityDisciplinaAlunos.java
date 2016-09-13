@@ -162,23 +162,26 @@ public class ActivityDisciplinaAlunos extends AppCompatActivity implements Googl
         }
 
         if (openFrequency == true) {
+            builder = new AlertDialog.Builder(ActivityDisciplinaAlunos.this);
             builder.setMessage("A chamada será encerrada!")
                     .setPositiveButton("OK", new DialogInterface.OnClickListener() {
                         public void onClick(DialogInterface dialog, int id) {
                             new fecharChamada().execute();
 
+                            finish();
                             Intent i = new Intent(ActivityDisciplinaAlunos.this, ActivityDisciplinas.class);
                             startActivity(i);
-                            finish();
+
                         }
                     }).setNegativeButton("CANCELAR", new DialogInterface.OnClickListener() {
                 public void onClick(DialogInterface dialogInterface, int i) {
                 }
             }).create().show();
         } else {
+            finish();
             Intent i = new Intent(ActivityDisciplinaAlunos.this, ActivityDisciplinas.class);
             startActivity(i);
-            finish();
+
         }
     }
 
@@ -273,7 +276,7 @@ public class ActivityDisciplinaAlunos extends AppCompatActivity implements Googl
                             new fecharChamada().execute();
                         }
                     }
-                }, 10000);
+                }, 100000);
             }
         }
     }
@@ -313,6 +316,9 @@ public class ActivityDisciplinaAlunos extends AppCompatActivity implements Googl
                 @Override
                 public void onClick(DialogInterface dialog, int which) {
                     finish();
+                    Intent i = new Intent(ActivityDisciplinaAlunos.this, ActivityDisciplinas.class);
+                    startActivity(i);
+
                 }
             }).create().show();
         }
@@ -385,6 +391,8 @@ public class ActivityDisciplinaAlunos extends AppCompatActivity implements Googl
                     .setPositiveButton(R.string.ok, new DialogInterface.OnClickListener() {
                         public void onClick(DialogInterface dialog, int id) {
                             finish();
+                            Intent i = new Intent(ActivityDisciplinaAlunos.this, ActivityDisciplinas.class);
+                            startActivity(i);
                         }
                     }).create().show();
         }
