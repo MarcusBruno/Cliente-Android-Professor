@@ -12,24 +12,11 @@
     tools:context=".Views.ActivityDisciplinaAlunos"
     tools:showIn="@layout/activity_disciplina_alunos">
 
-    <RelativeLayout
-        android:id="@+id/title_header_disciplina_alunos"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content">
 
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="ALUNOS MATRÍCULADO"
-            android:textAlignment="center"
-            android:textSize="17dp"
-            android:textStyle="bold" />
-    </RelativeLayout>
 
     <RelativeLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:layout_below="@id/title_header_disciplina_alunos"
         android:layout_marginTop="20dp">
 
         <ListView

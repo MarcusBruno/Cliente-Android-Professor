@@ -147,6 +147,7 @@ public class ActivityDisciplinas extends AppCompatActivity  {
 
             Intent i = new Intent(ActivityDisciplinas.this, ActivityDisciplinaAlunos.class);
             i.putExtra("disciplina", disciplinas.get(itemSelected));
+            i.putExtra("status", true);
             startActivity(i);
             finish();
         } else if (item.getItemId() == 2) {

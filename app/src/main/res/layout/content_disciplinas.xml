@@ -11,24 +11,10 @@
     app:layout_behavior="@string/appbar_scrolling_view_behavior"
     tools:context=".Views.ActivityDisciplinas"
     tools:showIn="@layout/activity_disciplinas">
-    <RelativeLayout
-        android:id="@+id/title_header_disciplinas"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content">
-
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="DISCIPLINAS"
-            android:textAlignment="center"
-            android:textSize="20dp"
-            android:textStyle="bold" />
-    </RelativeLayout>
 
     <RelativeLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:layout_below="@id/title_header_disciplinas"
         android:layout_marginTop="20dp">
 
         <ListView

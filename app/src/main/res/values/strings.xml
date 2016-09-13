@@ -1,8 +1,8 @@
 <resources>
     <string name="app_name">SISCONFE Professor</string>
     <string name="action_settings">Settings</string>
-    <string name="title_activity_activity_disciplinas"></string>
-    <string name="title_activity_activity_disciplina_alunos"></string>
+    <string name="title_activity_activity_disciplinas">DISCIPLINAS</string>
+    <string name="title_activity_activity_disciplina_alunos">LISTA DE CHAMADA</string>
     <string name="message_open_frequency">Tem certeza que deseja abrir a chamada ?</string>
     <string name="message_close_frequency">Tem certeza que deseja encerrar a chamada ?</string>
     <string name="yes">SIM</string>

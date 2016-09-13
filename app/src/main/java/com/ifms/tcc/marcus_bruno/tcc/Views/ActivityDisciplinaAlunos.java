@@ -46,19 +46,25 @@ import java.util.TimerTask;
 
 public class ActivityDisciplinaAlunos extends AppCompatActivity implements GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener {
 
+    private String idFrequency; //Id do diário. Cada chamada aberta recebe um ID do diário.
     private Disciplina disciplina;
-    private boolean openFrequency;
-    private String idFrequency;
-    private ListView alunosLV;
-    private ArrayList<Aluno> alunos;
-    private ArrayList<String> alunosAdapter;
+    private Timer timer = new Timer();
     private AlertDialog.Builder builder;
-    private GoogleApiClient mGoogleApiClient;
+    private ServiceHandler sh = new ServiceHandler();
     private MenuItem closeFrequencyAction, openFrequencyAction;
     protected static final Professor PROFESSOR = ActivityLogin.PROFESSOR;
-    private Timer timer = new Timer();
-    private ArrayList<Integer> seletedItems;
+
+    // openFrequency (FLAG) - Quando uma chamada aberta esta variavel se torna true.
+    //status (FLAG) - Esta variavel é preenchida por putExtra. Necessária para que não seja aberta uma outra chamada em casos de o app entrar em background e seja reaberto.
+    private boolean status, openFrequency;
+
     private Location mCurrentLocation;
+    private GoogleApiClient mGoogleApiClient;
+
+    private ListView alunosLV;
+    private ArrayList<Aluno> alunos; //Lista de objetos do tipo aluno
+    private ArrayList<String> alunosAdapter; //Lista de alunos do tipo String (ID: Nome).
+    private ArrayList<Integer> seletedItems; //Array de alunos selecionados da lista para dar presença de forma manual.
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -69,6 +75,7 @@ public class ActivityDisciplinaAlunos extends AppCompatActivity implements Googl
 
         Intent i = getIntent();
         disciplina = (Disciplina) i.getSerializableExtra("disciplina");
+        status = (boolean) i.getSerializableExtra("status");
         alunosLV = (ListView) findViewById(R.id.list_view_lista_alunuos_disciplina);
 
         // Create the location client to start receiving updates
@@ -76,8 +83,6 @@ public class ActivityDisciplinaAlunos extends AppCompatActivity implements Googl
                 .addApi(LocationServices.API)
                 .addConnectionCallbacks(ActivityDisciplinaAlunos.this)
                 .addOnConnectionFailedListener(ActivityDisciplinaAlunos.this).build();
-
-
 
         new getAlunosDaDisciplina().execute();
     }
@@ -140,7 +145,10 @@ public class ActivityDisciplinaAlunos extends AppCompatActivity implements Googl
 
     @Override
     public void onConnected(@Nullable Bundle bundle) {
-        new abrirChamada().execute();
+        if(status) {
+            new abrirChamada().execute();
+            status = false;
+        }
     }
 
     @Override
@@ -193,7 +201,6 @@ public class ActivityDisciplinaAlunos extends AppCompatActivity implements Googl
         @Override
         protected Integer doInBackground(String... params) {
             // Creating service handler class instance
-            ServiceHandler sh = new ServiceHandler();
             try {
                 List<NameValuePair> param = new ArrayList<NameValuePair>();
                 param.add(new BasicNameValuePair("id", disciplina.getCodigo()));
@@ -241,7 +248,6 @@ public class ActivityDisciplinaAlunos extends AppCompatActivity implements Googl
 
                 if (mCurrentLocation != null) {
                     // Creating service handler class instance
-                    ServiceHandler sh = new ServiceHandler();
                     try {
                         List<NameValuePair> param = new ArrayList<NameValuePair>();
                         param.add(new BasicNameValuePair("rp", PROFESSOR.getRp()));
@@ -276,7 +282,7 @@ public class ActivityDisciplinaAlunos extends AppCompatActivity implements Googl
                             new fecharChamada().execute();
                         }
                     }
-                }, 100000);
+                }, 120000);
             }
         }
     }
@@ -289,8 +295,6 @@ public class ActivityDisciplinaAlunos extends AppCompatActivity implements Googl
 
         @Override
         protected Integer doInBackground(String... params) {
-            // Creating service handler class instance
-            ServiceHandler sh = new ServiceHandler();
             List<NameValuePair> param = new ArrayList<NameValuePair>();
 
             param.add(new BasicNameValuePair("situacao", "0"));
@@ -298,7 +302,7 @@ public class ActivityDisciplinaAlunos extends AppCompatActivity implements Googl
 
             // Making a request to url and getting response
             sh.makeServiceCall(Routes.getUrlFecharChamada(), ServiceHandler.PUT, param);
-            openFrequency = false;
+            openFrequency = false; //Chamada é fechada.
             return null;
         }
 
@@ -363,7 +367,7 @@ public class ActivityDisciplinaAlunos extends AppCompatActivity implements Googl
         @Override
         protected Integer doInBackground(String... params) {
             // Creating service handler class instance
-            ServiceHandler sh = new ServiceHandler();
+
             int lengthItens = (seletedItems.size()-1);
 
             while(lengthItens>=0){
