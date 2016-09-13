@@ -12,15 +12,6 @@
     tools:context=".Views.ActivityLogin"
     tools:showIn="@layout/activity_login">
 
-    <TextView
-        android:id="@+id/titleHeader"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="SISCONFE"
-        android:textAlignment="center"
-        android:textSize="20dp"
-        android:textStyle="bold" />
-
     <RelativeLayout
         android:id="@+id/relative_layout_conitaner_input_login"
         android:layout_width="match_parent"
