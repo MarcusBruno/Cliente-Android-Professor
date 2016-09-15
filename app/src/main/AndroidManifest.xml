@@ -18,7 +18,8 @@
         <activity
             android:name=".Views.ActivityLogin"
             android:label="@string/app_name"
-            android:theme="@style/AppTheme.NoActionBar">
+            android:theme="@style/AppTheme.NoActionBar"
+            android:screenOrientation="portrait">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
@@ -28,10 +29,17 @@
         <activity
             android:name=".Views.ActivityDisciplinas"
             android:label="@string/title_activity_activity_disciplinas"
-            android:theme="@style/AppTheme.NoActionBar" />
+            android:theme="@style/AppTheme.NoActionBar"
+            android:screenOrientation="portrait"/>
         <activity
             android:name=".Views.ActivityDisciplinaAlunos"
             android:label="@string/title_activity_activity_disciplina_alunos"
+            android:theme="@style/AppTheme.NoActionBar"
+            android:screenOrientation="portrait"/>
+
+        <activity
+            android:name=".Views.CadastrarActivity"
+            android:label="@string/title_activity_cadastrar"
             android:theme="@style/AppTheme.NoActionBar"></activity>
 
         <meta-data

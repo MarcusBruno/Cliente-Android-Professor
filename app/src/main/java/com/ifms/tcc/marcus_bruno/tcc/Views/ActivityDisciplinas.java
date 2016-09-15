@@ -29,8 +29,6 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.sql.Date;
-import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -60,6 +58,8 @@ public class ActivityDisciplinas extends AppCompatActivity  {
 
         new getDisciplinas().execute();
         new checarChamadasAbertas().execute();
+
+
     }
 
     @Override
@@ -96,13 +96,11 @@ public class ActivityDisciplinas extends AppCompatActivity  {
 
         @Override
         protected Integer doInBackground(String... params) {
-            // Creating service handler class instance
             ServiceHandler sh = new ServiceHandler();
             try {
                 List<NameValuePair> param = new ArrayList<NameValuePair>();
                 param.add(new BasicNameValuePair("rp", PROFESSOR.getRp()));
 
-                // Making a request to url and getting response
                 JSONArray jsonObj = new JSONArray(sh.makeServiceCall(Routes.getUrlBuscarDisciplinasProfessor(), ServiceHandler.POST, param));
                 disciplinas = new ArrayList<>();
                 disciplinasAdapter = new ArrayList<>();
@@ -121,7 +119,6 @@ public class ActivityDisciplinas extends AppCompatActivity  {
 
         @Override
         protected void onPostExecute(Integer numero) {
-            //Implements the ArrayAdapter after get the data of Web Service.
             ArrayAdapter<String> adapter = new ArrayAdapter<>(ActivityDisciplinas.this, android.R.layout.simple_expandable_list_item_1, disciplinasAdapter);
             disciplinasLV.setAdapter(adapter);
         }

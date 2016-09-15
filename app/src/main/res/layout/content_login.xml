@@ -29,6 +29,7 @@
             android:id="@+id/edit_text_login_rp"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:inputType="number"
             android:layout_below="@id/text_view_login_rp" />
 
         <TextView
@@ -44,6 +45,7 @@
             android:id="@+id/edit_text_login_senha"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:inputType="number"
             android:layout_below="@id/text_view_login_senha" />
 
         <Button
@@ -68,6 +70,7 @@
             android:text="Recuperar Senha" />
 
         <Button
+            android:id="@+id/button_cadastrar_me"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_alignParentRight="true"

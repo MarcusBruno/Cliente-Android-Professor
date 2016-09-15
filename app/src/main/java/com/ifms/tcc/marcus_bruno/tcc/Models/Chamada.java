@@ -1,7 +1,5 @@
 package com.ifms.tcc.marcus_bruno.tcc.Models;
 
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
 import java.util.Date;
 
 /**

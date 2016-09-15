@@ -12,6 +12,7 @@ public class Routes {
     private static final String URL_BUSCAR_DISCIPLINAS_PROFESSOR = URL+"todo/disciplinas/professor/";
     private static final String URL_ADC_PRESENCA_ALUNOS_MANUAL = URL+"todo/presenca/aluno/manual/";
     private static final String URL_CHECAR_CHAMADA_ABERTA = URL+"todo/professor/chamada/aberta/";
+    private static final String URL_CADASTRAR_PROFESSOR = URL+"todo/professor/cadastrar/";
 
     public static String getUrlLoginProfessor() {
         return URL_LOGIN_PROFESSOR;
@@ -39,5 +40,9 @@ public class Routes {
 
     public static String getUrlChecarChamadaAberta() {
         return URL_CHECAR_CHAMADA_ABERTA;
+    }
+
+    public static String getUrlCadastrarProfessor() {
+        return URL_CADASTRAR_PROFESSOR;
     }
 }

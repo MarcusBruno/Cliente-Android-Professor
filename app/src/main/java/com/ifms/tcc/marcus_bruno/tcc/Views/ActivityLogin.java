@@ -5,12 +5,12 @@ import android.app.AlertDialog;
 import android.app.ProgressDialog;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
-import android.view.Menu;
-import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
@@ -35,7 +35,7 @@ import java.util.List;
 
 public class ActivityLogin extends AppCompatActivity {
 
-    private Button loginBtn;
+    private Button loginBtn,cadastrarBtn;
     private EditText rpET, passET;
     private boolean CONEXAO;
     private ProgressDialog dialog;
@@ -59,6 +59,8 @@ public class ActivityLogin extends AppCompatActivity {
             public void onPermissionRationaleShouldBeShown(List<PermissionRequest> permissions, PermissionToken token) {/* ... */}
         }, Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.ACCESS_NETWORK_STATE, Manifest.permission.INTERNET, Manifest.permission.WRITE_EXTERNAL_STORAGE);
 
+
+        cadastrarBtn = (Button) findViewById(R.id.button_cadastrar_me);
         loginBtn = (Button) findViewById(R.id.button_login);
         rpET = (EditText) findViewById(R.id.edit_text_login_rp);
         passET = (EditText) findViewById(R.id.edit_text_login_senha);
@@ -78,6 +80,15 @@ public class ActivityLogin extends AppCompatActivity {
                                 }
                             }).create().show();
                 }
+            }
+        });
+
+        cadastrarBtn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                finish();
+                Intent i = new Intent(ActivityLogin.this, CadastrarActivity.class);
+                startActivity(i);
             }
         });
     }

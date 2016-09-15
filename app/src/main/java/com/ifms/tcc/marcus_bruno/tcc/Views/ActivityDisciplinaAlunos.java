@@ -1,19 +1,16 @@
 package com.ifms.tcc.marcus_bruno.tcc.Views;
 
-import android.Manifest;
+
 import android.app.AlertDialog;
 import android.content.DialogInterface;
 import android.content.Intent;
-import android.content.pm.PackageManager;
 import android.location.Location;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
-import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
-import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.ArrayAdapter;
@@ -22,6 +19,8 @@ import android.widget.Toast;
 
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
+import com.google.android.gms.location.LocationListener;
+import com.google.android.gms.location.LocationRequest;
 import com.google.android.gms.location.LocationServices;
 import com.ifms.tcc.marcus_bruno.tcc.Models.Aluno;
 import com.ifms.tcc.marcus_bruno.tcc.Models.Disciplina;
@@ -36,15 +35,12 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
 
-public class ActivityDisciplinaAlunos extends AppCompatActivity implements GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener {
+public class ActivityDisciplinaAlunos extends AppCompatActivity implements GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener, LocationListener {
 
     private String idFrequency; //Id do diário. Cada chamada aberta recebe um ID do diário.
     private Disciplina disciplina;
@@ -53,12 +49,9 @@ public class ActivityDisciplinaAlunos extends AppCompatActivity implements Googl
     private ServiceHandler sh = new ServiceHandler();
     private MenuItem closeFrequencyAction, openFrequencyAction;
     protected static final Professor PROFESSOR = ActivityLogin.PROFESSOR;
+    private LocationRequest loc;
 
-    // openFrequency (FLAG) - Quando uma chamada aberta esta variavel se torna true.
-    //status (FLAG) - Esta variavel é preenchida por putExtra. Necessária para que não seja aberta uma outra chamada em casos de o app entrar em background e seja reaberto.
     private boolean status, openFrequency;
-
-    private Location mCurrentLocation;
     private GoogleApiClient mGoogleApiClient;
 
     private ListView alunosLV;
@@ -78,7 +71,7 @@ public class ActivityDisciplinaAlunos extends AppCompatActivity implements Googl
         status = (boolean) i.getSerializableExtra("status");
         alunosLV = (ListView) findViewById(R.id.list_view_lista_alunuos_disciplina);
 
-        // Create the location client to start receiving updates
+
         mGoogleApiClient = new GoogleApiClient.Builder(this)
                 .addApi(LocationServices.API)
                 .addConnectionCallbacks(ActivityDisciplinaAlunos.this)
@@ -136,32 +129,35 @@ public class ActivityDisciplinaAlunos extends AppCompatActivity implements Googl
         mGoogleApiClient.connect();
     }
 
+    protected void onResume() {
+        super.onResume();
+        if (!mGoogleApiClient.isConnected() || !mGoogleApiClient.isConnecting()) {
+            mGoogleApiClient.connect();
+        }
+    }
+
     protected void onStop() {
+        super.onStop();
         if (mGoogleApiClient != null && mGoogleApiClient.isConnected()) {
+            LocationServices.FusedLocationApi.removeLocationUpdates(mGoogleApiClient, this);
             mGoogleApiClient.disconnect();
         }
-        super.onStop();
     }
 
     @Override
     public void onConnected(@Nullable Bundle bundle) {
-        if(status) {
-            new abrirChamada().execute();
-            status = false;
-        }
+        configuracoes();
     }
 
     @Override
     public void onConnectionSuspended(int i) {
-        if (i == CAUSE_SERVICE_DISCONNECTED) {
-            Toast.makeText(this, "Disconnected. Please re-connect.", Toast.LENGTH_SHORT).show();
-        } else if (i == CAUSE_NETWORK_LOST) {
-            Toast.makeText(this, "Network lost. Please re-connect.", Toast.LENGTH_SHORT).show();
-        }
+        mGoogleApiClient.connect();
     }
 
     @Override
-    public void onConnectionFailed(@NonNull ConnectionResult connectionResult) { }
+    public void onConnectionFailed(@NonNull ConnectionResult connectionResult) {
+        mGoogleApiClient.clearDefaultAccountAndReconnect();
+    }
 
     @Override
     public void onBackPressed() {
@@ -193,6 +189,12 @@ public class ActivityDisciplinaAlunos extends AppCompatActivity implements Googl
         }
     }
 
+    @Override
+    public void onLocationChanged(Location location) {
+        PROFESSOR.setLatitude(location.getLatitude() + "");
+        PROFESSOR.setLongitude(location.getLongitude() + "");
+    }
+
     public class getAlunosDaDisciplina extends AsyncTask<String, Integer, Integer> {
         @Override
         protected void onPreExecute() {
@@ -212,7 +214,7 @@ public class ActivityDisciplinaAlunos extends AppCompatActivity implements Googl
 
                 for (int i = 0; i < jsonObj.length(); i++) {
                     JSONObject c = jsonObj.getJSONObject(i);
-                    Aluno a = new Aluno(c.getString("ra"), c.getString("nome"), c.getString("telefone"), c.getString("email"), c.getString("mac_address"));
+                    Aluno a = new Aluno(c.getString("tb_alu_ra"), c.getString("tb_alu_nome"), c.getString("tb_alu_telefone"), c.getString("tb_alu_email"), c.getString("tb_alu_mac_address"));
                     alunos.add(a);
                     alunosAdapter.add(a.getRa() + ": " + a.getNome());
                 }
@@ -233,39 +235,33 @@ public class ActivityDisciplinaAlunos extends AppCompatActivity implements Googl
     public class abrirChamada extends AsyncTask<String, Integer, Integer> {
         @Override
         protected void onPreExecute() {
-            if (!mGoogleApiClient.isConnected()) {
-                mGoogleApiClient.connect();
-            }
         }
 
         @Override
         protected Integer doInBackground(String... params) {
+
+            while (PROFESSOR.getLatitude() == null || PROFESSOR.getLongitude() == null ){
+                System.out.println("Carregando...");
+            }
             if (!openFrequency) {
+                // Creating service handler class instance
+                try {
+                    List<NameValuePair> param = new ArrayList<NameValuePair>();
+                    param.add(new BasicNameValuePair("rp", PROFESSOR.getRp()));
+                    param.add(new BasicNameValuePair("disciplina", disciplina.getCodigo()));
+                    param.add(new BasicNameValuePair("situacao", "1"));
+                    param.add(new BasicNameValuePair("latitude", PROFESSOR.getLatitude() + ""));
+                    param.add(new BasicNameValuePair("longitude", PROFESSOR.getLongitude() + ""));
 
-                if (ActivityCompat.checkSelfPermission(ActivityDisciplinaAlunos.this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(ActivityDisciplinaAlunos.this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-                }
-                mCurrentLocation = LocationServices.FusedLocationApi.getLastLocation(mGoogleApiClient);
-
-                if (mCurrentLocation != null) {
-                    // Creating service handler class instance
-                    try {
-                        List<NameValuePair> param = new ArrayList<NameValuePair>();
-                        param.add(new BasicNameValuePair("rp", PROFESSOR.getRp()));
-                        param.add(new BasicNameValuePair("disciplina", disciplina.getCodigo()));
-                        param.add(new BasicNameValuePair("situacao", "1"));
-                        param.add(new BasicNameValuePair("latitude", mCurrentLocation.getLatitude() + ""));
-                        param.add(new BasicNameValuePair("longitude", mCurrentLocation.getLongitude() + ""));
-
-                        // Making a request to url and getting response
-                        JSONObject jsonObj = new JSONObject(sh.makeServiceCall(Routes.getUrlAbrirChamada(), ServiceHandler.POST, param));
-                        idFrequency = jsonObj.getJSONArray("return").getJSONObject(0).getString("id");
-                        if (!idFrequency.equalsIgnoreCase("0")) {
-                            openFrequency = true;
-                        }
-
-                    } catch (JSONException e) {
-                        e.printStackTrace();
+                    // Making a request to url and getting response
+                    JSONObject jsonObj = new JSONObject(sh.makeServiceCall(Routes.getUrlAbrirChamada(), ServiceHandler.POST, param));
+                    idFrequency = jsonObj.getJSONArray("return").getJSONObject(0).getString("id");
+                    if (!idFrequency.equalsIgnoreCase("0")) {
+                        openFrequency = true;
                     }
+
+                } catch (JSONException e) {
+                    e.printStackTrace();
                 }
             }
             return null;
@@ -273,8 +269,6 @@ public class ActivityDisciplinaAlunos extends AppCompatActivity implements Googl
 
         @Override
         protected void onPostExecute(Integer numero) {
-            mGoogleApiClient.disconnect();
-
             if (openFrequency == true) {
                 timer.schedule(new TimerTask() {
                     public void run() {
@@ -296,11 +290,9 @@ public class ActivityDisciplinaAlunos extends AppCompatActivity implements Googl
         @Override
         protected Integer doInBackground(String... params) {
             List<NameValuePair> param = new ArrayList<NameValuePair>();
-
             param.add(new BasicNameValuePair("situacao", "0"));
             param.add(new BasicNameValuePair("id", idFrequency));
 
-            // Making a request to url and getting response
             sh.makeServiceCall(Routes.getUrlFecharChamada(), ServiceHandler.PUT, param);
             openFrequency = false; //Chamada é fechada.
             return null;
@@ -314,11 +306,12 @@ public class ActivityDisciplinaAlunos extends AppCompatActivity implements Googl
             builder.setMessage("Chamada concluída com sucesso! Deseja adicionar algum aluno manualmente?")
                     .setPositiveButton(R.string.yes, new DialogInterface.OnClickListener() {
                         public void onClick(DialogInterface dialog, int id) {
-                            teste();
+                            alertAdcPresencaManual();
                         }
                     }).setNegativeButton(R.string.no, new DialogInterface.OnClickListener() {
                 @Override
                 public void onClick(DialogInterface dialog, int which) {
+
                     finish();
                     Intent i = new Intent(ActivityDisciplinaAlunos.this, ActivityDisciplinas.class);
                     startActivity(i);
@@ -328,7 +321,7 @@ public class ActivityDisciplinaAlunos extends AppCompatActivity implements Googl
         }
     }
 
-    private void teste() {
+    private void alertAdcPresencaManual() {
         final CharSequence[] items = alunosAdapter.toArray(new CharSequence[alunosAdapter.size()]);
         seletedItems = new ArrayList<>();
 
@@ -352,7 +345,21 @@ public class ActivityDisciplinaAlunos extends AppCompatActivity implements Googl
                 }).setNegativeButton("Cancelar", new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialog, int id) {
-                        //  Your code when user clicked on Cancel
+                        builder.setMessage("Chamada está concluída! Deseja adicionar algum aluno manualmente?")
+                                .setPositiveButton(R.string.yes, new DialogInterface.OnClickListener() {
+                                    public void onClick(DialogInterface dialog, int id) {
+                                        alertAdcPresencaManual();
+                                    }
+                                }).setNegativeButton(R.string.no, new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialog, int which) {
+
+                                finish();
+                                Intent i = new Intent(ActivityDisciplinaAlunos.this, ActivityDisciplinas.class);
+                                startActivity(i);
+
+                            }
+                        }).create().show();
                     }
                 }).create();
         dialog.show();
@@ -366,23 +373,18 @@ public class ActivityDisciplinaAlunos extends AppCompatActivity implements Googl
 
         @Override
         protected Integer doInBackground(String... params) {
-            // Creating service handler class instance
-
-            int lengthItens = (seletedItems.size()-1);
-
-            while(lengthItens>=0){
+            int lengthItens = (seletedItems.size() - 1);
+            while (lengthItens >= 0) {
                 List<NameValuePair> param = new ArrayList<NameValuePair>();
                 param.add(new BasicNameValuePair("tb_lista_freq_codigo_ra", alunosAdapter.get(seletedItems.get(lengthItens)).split(":")[0]));
                 param.add(new BasicNameValuePair("tb_lista_freq_codigo_rp", PROFESSOR.getRp()));
                 param.add(new BasicNameValuePair("tb_lista_freq_codigo_disciplina", disciplina.getCodigo()));
                 param.add(new BasicNameValuePair("tb_lista_freq_id_diario", idFrequency));
-                param.add(new BasicNameValuePair("tb_lista_freq_latitude_aluno", mCurrentLocation.getLatitude()+""));
-                param.add(new BasicNameValuePair("tb_lista_freq_longitude_aluno", mCurrentLocation.getLongitude()+""));
+                param.add(new BasicNameValuePair("tb_lista_freq_latitude_aluno", PROFESSOR.getLatitude() + ""));
+                param.add(new BasicNameValuePair("tb_lista_freq_longitude_aluno", PROFESSOR.getLongitude() + ""));
                 param.add(new BasicNameValuePair("tb_lista_freq_presenca", "1"));
 
-                // Making a request to url and getting response
                 sh.makeServiceCall(Routes.getUrlAdcPresencaAlunosManual(), ServiceHandler.POST, param);
-
                 lengthItens--;
             }
             return null;
@@ -400,5 +402,21 @@ public class ActivityDisciplinaAlunos extends AppCompatActivity implements Googl
                         }
                     }).create().show();
         }
+    }
+
+    void configuracoes() {
+
+        loc = LocationRequest.create();
+        loc.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
+        loc.setInterval(5 * 1000);
+        loc.setFastestInterval(1 * 1000);
+        LocationServices.FusedLocationApi.requestLocationUpdates(mGoogleApiClient, loc, ActivityDisciplinaAlunos.this);
+
+
+        if (status) {
+            new abrirChamada().execute();
+            status = false;
+        }
+
     }
 }
