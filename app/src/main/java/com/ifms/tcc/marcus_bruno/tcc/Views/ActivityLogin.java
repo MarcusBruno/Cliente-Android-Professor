@@ -119,7 +119,7 @@ public class ActivityLogin extends AppCompatActivity {
                         if (!status.equalsIgnoreCase("0")) {
                             // Getting data teacher of array in position 0.
                             JSONObject c = jsonObj.getJSONArray("message").getJSONObject(0);
-                            PROFESSOR = new Professor(c.getString("rp"), c.getString("nome"), c.getString("telefone"), c.getString("email"), c.getString("mac_address"));
+                            PROFESSOR = new Professor(c.getString("tb_prof_rp"), c.getString("tb_prof_nome"), c.getString("tb_prof_telefone"), c.getString("tb_prof_email"), c.getString("tb_prof_mac_address"));
                         }
                     }
                 } else {

@@ -45,12 +45,13 @@ public class ActivityDisciplinaAlunos extends AppCompatActivity implements Googl
     private String idFrequency; //Id do diário. Cada chamada aberta recebe um ID do diário.
     private Disciplina disciplina;
     private Timer timer = new Timer();
+    private Timer timer2 = new Timer();
     private AlertDialog.Builder builder;
     private ServiceHandler sh = new ServiceHandler();
     private MenuItem closeFrequencyAction, openFrequencyAction;
     protected static final Professor PROFESSOR = ActivityLogin.PROFESSOR;
     private LocationRequest loc;
-
+    String alunosOk="";
     private boolean status, openFrequency;
     private GoogleApiClient mGoogleApiClient;
 
@@ -273,18 +274,73 @@ public class ActivityDisciplinaAlunos extends AppCompatActivity implements Googl
                 timer.schedule(new TimerTask() {
                     public void run() {
                         if (openFrequency == true) {
+                            alunosOk = "";
                             new fecharChamada().execute();
                         }
+
+
                     }
-                }, 120000);
+                }, 122000);
+                timer2.schedule(new TimerTask() {
+                    @Override
+                    public void run() {
+                        //verificar atualizações.
+                        new buscarAutenticaoRealizadas().execute();
+                    }
+                },15000, 15000);
             }
         }
     }
+
+
+    public class buscarAutenticaoRealizadas extends AsyncTask<String, Integer, Integer> {
+
+        @Override
+        protected void onPreExecute() {}
+
+        @Override
+        protected Integer doInBackground(String... params) {
+            List<NameValuePair> param = new ArrayList<NameValuePair>();
+            param.add(new BasicNameValuePair("diario", idFrequency));
+            param.add(new BasicNameValuePair("alunos", alunosOk));
+
+
+            try {
+
+                JSONArray jsonObj = new JSONArray(sh.makeServiceCall(Routes.getUrlBuscarAutenticacoesRealizadas(), ServiceHandler.POST, param));
+                for (int i = 0; i < jsonObj.length(); i++) {
+                    JSONObject c = jsonObj.getJSONObject(i);
+
+                    if(!(alunosOk == "")){
+                        alunosOk += ","+ c.getString("tb_lista_freq_codigo_ra");
+                    }else{
+                        alunosOk = c.getString("tb_lista_freq_codigo_ra");
+                    }
+                }
+
+
+            } catch (JSONException e) {
+                e.printStackTrace();
+            }
+
+
+
+            return null;
+        }
+
+        @Override
+        protected void onPostExecute(Integer numero) {
+
+        }
+    }
+
 
     public class fecharChamada extends AsyncTask<String, Integer, Integer> {
         @Override
         protected void onPreExecute() {
             timer.purge();
+            timer2.purge();
+            alunosOk = "";
         }
 
         @Override
@@ -311,7 +367,8 @@ public class ActivityDisciplinaAlunos extends AppCompatActivity implements Googl
                     }).setNegativeButton(R.string.no, new DialogInterface.OnClickListener() {
                 @Override
                 public void onClick(DialogInterface dialog, int which) {
-
+                    idFrequency = null;
+                    alunosOk = null;
                     finish();
                     Intent i = new Intent(ActivityDisciplinaAlunos.this, ActivityDisciplinas.class);
                     startActivity(i);
@@ -396,6 +453,8 @@ public class ActivityDisciplinaAlunos extends AppCompatActivity implements Googl
             builder.setMessage("Chamada concluída com sucesso!")
                     .setPositiveButton(R.string.ok, new DialogInterface.OnClickListener() {
                         public void onClick(DialogInterface dialog, int id) {
+                            idFrequency=null;
+                            alunosOk = null;
                             finish();
                             Intent i = new Intent(ActivityDisciplinaAlunos.this, ActivityDisciplinas.class);
                             startActivity(i);

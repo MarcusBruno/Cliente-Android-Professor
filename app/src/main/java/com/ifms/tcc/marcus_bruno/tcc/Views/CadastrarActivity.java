@@ -28,7 +28,7 @@ import java.util.List;
 public class CadastrarActivity extends AppCompatActivity {
     private boolean CONEXAO;
     private Button cadastrarBtn;
-    private EditText et_nome, et_email, et_telefone, et_login_ra, et_senha, et_confirmar_senha;
+    private EditText et_nome, et_email, et_telefone, et_login_rp, et_senha, et_confirmar_senha;
     private AlertDialog.Builder builder;
     private ProgressDialog dialog;
 
@@ -43,7 +43,7 @@ public class CadastrarActivity extends AppCompatActivity {
         et_nome = (EditText) findViewById(R.id.edit_text_nome);
         et_email = (EditText) findViewById(R.id.edit_text_email);
         et_telefone = (EditText) findViewById(R.id.edit_text_telefone);
-        et_login_ra = (EditText) findViewById(R.id.edit_text_login_ra);
+        et_login_rp = (EditText) findViewById(R.id.edit_text_login_rp);
         et_senha = (EditText) findViewById(R.id.edit_text_senha);
         et_confirmar_senha = (EditText) findViewById(R.id.edit_text_confirmar_senha);
 
@@ -61,7 +61,7 @@ public class CadastrarActivity extends AppCompatActivity {
         if(!et_nome.getText().toString().equalsIgnoreCase("")){
             if(!et_email.getText().toString().equalsIgnoreCase("")){
                 if(!et_telefone.getText().toString().equalsIgnoreCase("")){
-                    if(!et_login_ra.getText().toString().equalsIgnoreCase("")){
+                    if(!et_login_rp.getText().toString().equalsIgnoreCase("")){
                         if(!et_senha.getText().toString().equalsIgnoreCase("") && !et_confirmar_senha.getText().toString().equalsIgnoreCase("")){
                             if(et_senha.getText().toString().equalsIgnoreCase(et_confirmar_senha.getText().toString())){
 
@@ -120,15 +120,16 @@ public class CadastrarActivity extends AppCompatActivity {
         @Override
         protected Integer doInBackground(String... params) {
             List<NameValuePair> pairs = new ArrayList<NameValuePair>();
-            pairs.add(new BasicNameValuePair("tb_alu_nome", et_nome.getText().toString()));
-            pairs.add(new BasicNameValuePair("tb_alu_email", et_email.getText().toString()));
-            pairs.add(new BasicNameValuePair("tb_alu_telefone", et_telefone.getText().toString()));
-            pairs.add(new BasicNameValuePair("tb_alu_ra", et_login_ra.getText().toString()));
-            pairs.add(new BasicNameValuePair("tb_usu_ra", et_login_ra.getText().toString()));
+            pairs.add(new BasicNameValuePair("tb_prof_nome", et_nome.getText().toString()));
+            pairs.add(new BasicNameValuePair("tb_prof_email", et_email.getText().toString()));
+            pairs.add(new BasicNameValuePair("tb_prof_telefone", et_telefone.getText().toString()));
+            pairs.add(new BasicNameValuePair("tb_prof_rp", et_login_rp.getText().toString()));
+            pairs.add(new BasicNameValuePair("tb_prof_mac_address", MacAddress.getValueMacAddres()));
+
+            pairs.add(new BasicNameValuePair("tb_usu_rp", et_login_rp.getText().toString()));
             pairs.add(new BasicNameValuePair("tb_usu_senha", et_senha.getText().toString()));
-            pairs.add(new BasicNameValuePair("tb_alu_mac_address", MacAddress.getValueMacAddres()));
             pairs.add(new BasicNameValuePair("tb_usu_situacao","Ativo"));
-            pairs.add(new BasicNameValuePair("tb_usu_tipo", "Aluno"));
+            pairs.add(new BasicNameValuePair("tb_usu_tipo", "Professor"));
             pairs.add(new BasicNameValuePair("tb_usu_ultimo_acesso", "CURRENT_TIMESTAMP"));
 
             ServiceHandler sh = new ServiceHandler();
