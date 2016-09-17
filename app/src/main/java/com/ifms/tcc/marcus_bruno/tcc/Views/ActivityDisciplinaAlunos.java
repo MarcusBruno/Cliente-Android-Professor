@@ -51,7 +51,7 @@ public class ActivityDisciplinaAlunos extends AppCompatActivity implements Googl
     private MenuItem closeFrequencyAction, openFrequencyAction;
     protected static final Professor PROFESSOR = ActivityLogin.PROFESSOR;
     private LocationRequest loc;
-    String alunosOk="";
+    private String alunosOk="0";
     private boolean status, openFrequency;
     private GoogleApiClient mGoogleApiClient;
 
@@ -59,7 +59,8 @@ public class ActivityDisciplinaAlunos extends AppCompatActivity implements Googl
     private ArrayList<Aluno> alunos; //Lista de objetos do tipo aluno
     private ArrayList<String> alunosAdapter; //Lista de alunos do tipo String (ID: Nome).
     private ArrayList<Integer> seletedItems; //Array de alunos selecionados da lista para dar presença de forma manual.
-
+    ArrayList<String> alunosAdapterAux;
+    ArrayList<String> faltasAux;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -230,6 +231,8 @@ public class ActivityDisciplinaAlunos extends AppCompatActivity implements Googl
             //Implements the ArrayAdapter after get the data of Web Service.
             ArrayAdapter<String> adapter = new ArrayAdapter<>(ActivityDisciplinaAlunos.this, android.R.layout.simple_expandable_list_item_1, alunosAdapter);
             alunosLV.setAdapter(adapter);
+            alunosAdapterAux = alunosAdapter;
+            faltasAux = alunosAdapter;
         }
     }
 
@@ -274,7 +277,7 @@ public class ActivityDisciplinaAlunos extends AppCompatActivity implements Googl
                 timer.schedule(new TimerTask() {
                     public void run() {
                         if (openFrequency == true) {
-                            alunosOk = "";
+
                             new fecharChamada().execute();
                         }
 
@@ -300,21 +303,36 @@ public class ActivityDisciplinaAlunos extends AppCompatActivity implements Googl
 
         @Override
         protected Integer doInBackground(String... params) {
+            ArrayList<String> autenticados = new ArrayList<>();
             List<NameValuePair> param = new ArrayList<NameValuePair>();
             param.add(new BasicNameValuePair("diario", idFrequency));
             param.add(new BasicNameValuePair("alunos", alunosOk));
+            System.out.println(alunosOk);
 
 
             try {
 
                 JSONArray jsonObj = new JSONArray(sh.makeServiceCall(Routes.getUrlBuscarAutenticacoesRealizadas(), ServiceHandler.POST, param));
                 for (int i = 0; i < jsonObj.length(); i++) {
+
                     JSONObject c = jsonObj.getJSONObject(i);
 
-                    if(!(alunosOk == "")){
+                    if(!(alunosOk == "0") && !c.getString("tb_lista_freq_codigo_ra").equalsIgnoreCase("")){
                         alunosOk += ","+ c.getString("tb_lista_freq_codigo_ra");
+                        autenticados.add(c.getString("tb_lista_freq_codigo_ra"));
                     }else{
                         alunosOk = c.getString("tb_lista_freq_codigo_ra");
+                        autenticados.add(c.getString("tb_lista_freq_codigo_ra"));
+                    }
+                }
+
+                //Remover alunos que já computaram a presença
+                for(int i=0; i<alunosAdapter.size(); i++){
+                    for(int j=0; j<autenticados.size(); j++){
+                        if(alunosAdapter.get(i).split(":")[0].equalsIgnoreCase(autenticados.get(j))){
+                            alunosAdapterAux.remove(i);
+
+                        }
                     }
                 }
 
@@ -330,6 +348,8 @@ public class ActivityDisciplinaAlunos extends AppCompatActivity implements Googl
 
         @Override
         protected void onPostExecute(Integer numero) {
+            ArrayAdapter<String> adapter = new ArrayAdapter<>(ActivityDisciplinaAlunos.this, android.R.layout.simple_expandable_list_item_1, alunosAdapterAux);
+            alunosLV.setAdapter(adapter);
 
         }
     }
@@ -339,7 +359,9 @@ public class ActivityDisciplinaAlunos extends AppCompatActivity implements Googl
         @Override
         protected void onPreExecute() {
             timer.purge();
+            timer.cancel();
             timer2.purge();
+            timer2.cancel();
             alunosOk = "";
         }
 
@@ -379,7 +401,7 @@ public class ActivityDisciplinaAlunos extends AppCompatActivity implements Googl
     }
 
     private void alertAdcPresencaManual() {
-        final CharSequence[] items = alunosAdapter.toArray(new CharSequence[alunosAdapter.size()]);
+        final CharSequence[] items = alunosAdapterAux.toArray(new CharSequence[alunosAdapterAux.size()]);
         seletedItems = new ArrayList<>();
 
         AlertDialog dialog = new AlertDialog.Builder(this)
@@ -444,6 +466,61 @@ public class ActivityDisciplinaAlunos extends AppCompatActivity implements Googl
                 sh.makeServiceCall(Routes.getUrlAdcPresencaAlunosManual(), ServiceHandler.POST, param);
                 lengthItens--;
             }
+
+            if(faltasAux.size() != 0){
+
+                //do{
+
+
+                    for(int i=0; i<=seletedItems.size(); i++){
+                        int teste = Integer.parseInt(seletedItems.get(i).toString());
+                        String teste2 = alunosAdapterAux.get(teste).split(":")[0];
+                        for(int j=0; j<=faltasAux.size(); j++) {
+                            if (faltasAux.get(j).split(":")[0].equalsIgnoreCase(teste2)) {
+                                faltasAux.remove(j);
+                                break;
+                            }
+                        }
+                    }
+
+                   /* for(int i=0; i<=seletedItems.size(); i++){
+                        for(int j=0; j<=faltasAux.size(); j++){
+                            String teste = faltasAux.get(Integer.parseInt(seletedItems.get(i).toString())).split(":")[0];
+                            if(faltasAux.get(j).split(":")[0].equalsIgnoreCase(teste)){
+                                faltas.remove(j);
+                            }
+                        }
+                    }
+                    for(int i=0; i<=faltas.size(); i++){
+                        String teste = faltasAux.get(Integer.parseInt(seletedItems.get(i).toString())).split(":")[0];
+                        for(int j=0; j<= faltas.size(); j++){
+                            if(faltas.get(j).split(":")[0].equalsIgnoreCase(teste)){
+                                faltasAux.remove(i);
+                                break;
+                            }
+                        }
+                    }*/
+
+
+               // }while (seletedItems.size() != flag );
+
+
+                int loop = faltasAux.size();
+                while (loop >= 0) {
+                    List<NameValuePair> param = new ArrayList<NameValuePair>();
+                    param.add(new BasicNameValuePair("tb_lista_freq_codigo_ra", faltasAux.get(seletedItems.get(loop)).split(":")[0]));
+                    param.add(new BasicNameValuePair("tb_lista_freq_codigo_rp", PROFESSOR.getRp()));
+                    param.add(new BasicNameValuePair("tb_lista_freq_codigo_disciplina", disciplina.getCodigo()));
+                    param.add(new BasicNameValuePair("tb_lista_freq_id_diario", idFrequency));
+                    param.add(new BasicNameValuePair("tb_lista_freq_latitude_aluno", PROFESSOR.getLatitude() + ""));
+                    param.add(new BasicNameValuePair("tb_lista_freq_longitude_aluno", PROFESSOR.getLongitude() + ""));
+                    param.add(new BasicNameValuePair("tb_lista_freq_presenca", "0"));
+
+                    sh.makeServiceCall(Routes.getUrlAdcPresencaAlunosManual(), ServiceHandler.POST, param);
+                    loop--;
+                }
+            }
+
             return null;
         }
 
