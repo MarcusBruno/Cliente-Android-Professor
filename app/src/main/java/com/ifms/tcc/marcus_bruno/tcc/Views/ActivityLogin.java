@@ -35,7 +35,7 @@ import java.util.List;
 
 public class ActivityLogin extends AppCompatActivity {
 
-    private Button loginBtn,cadastrarBtn;
+    private Button loginBtn,cadastrarBtn, recupararSenha;
     private EditText rpET, passET;
     private boolean CONEXAO;
     private ProgressDialog dialog;
@@ -61,6 +61,7 @@ public class ActivityLogin extends AppCompatActivity {
 
 
         cadastrarBtn = (Button) findViewById(R.id.button_cadastrar_me);
+        recupararSenha = (Button) findViewById(R.id.button_recuperar_senha);
         loginBtn = (Button) findViewById(R.id.button_login);
         rpET = (EditText) findViewById(R.id.edit_text_login_rp);
         passET = (EditText) findViewById(R.id.edit_text_login_senha);
@@ -80,6 +81,15 @@ public class ActivityLogin extends AppCompatActivity {
                                 }
                             }).create().show();
                 }
+            }
+        });
+
+        recupararSenha.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                finish();
+                Intent i = new Intent(ActivityLogin.this, RecuperarSenhaActivity.class);
+                startActivity(i);
             }
         });
 
@@ -138,6 +148,7 @@ public class ActivityLogin extends AppCompatActivity {
                 Intent i = new Intent(ActivityLogin.this, ActivityDisciplinas.class);
                 startActivity(i);
                 finish();
+
             } else if (!CONEXAO) {
                 builder.setMessage(R.string.connection_failure)
                         .setPositiveButton(R.string.ok, new DialogInterface.OnClickListener() {

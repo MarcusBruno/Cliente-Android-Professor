@@ -12,4 +12,5 @@
     <string name="connection_failure">Falha na conexão com o servidor!</string>
     <string name="incorrect_data_login">Registro de Professor ou Senha incorretos!</string>
     <string name="title_activity_cadastrar">Cadastrar</string>
+    <string name="title_activity_recuperar_senha">Recuperar Senha</string>
 </resources>

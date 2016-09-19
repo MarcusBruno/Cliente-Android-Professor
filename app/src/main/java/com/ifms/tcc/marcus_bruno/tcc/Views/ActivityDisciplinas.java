@@ -43,7 +43,7 @@ public class ActivityDisciplinas extends AppCompatActivity  {
     private AlertDialog.Builder builder;
     private ArrayList<Disciplina> disciplinas;
     private ArrayList<String> disciplinasAdapter;
-    protected static final Professor PROFESSOR = ActivityLogin.PROFESSOR;
+    protected static Professor PROFESSOR = ActivityLogin.PROFESSOR;
 
 
     @Override
@@ -78,6 +78,7 @@ public class ActivityDisciplinas extends AppCompatActivity  {
                         .setPositiveButton(R.string.yes, new DialogInterface.OnClickListener() {
                             public void onClick(DialogInterface dialog, int id) {
                                 finish();
+                                ActivityLogin.PROFESSOR = null;//Limpa os dados do usuário.
                                 Intent i = new Intent(ActivityDisciplinas.this, ActivityLogin.class);
                                 startActivity(i);
                             }
@@ -91,8 +92,7 @@ public class ActivityDisciplinas extends AppCompatActivity  {
 
     public class getDisciplinas extends AsyncTask<String, Integer, Integer> {
         @Override
-        protected void onPreExecute() {
-        }
+        protected void onPreExecute() {}
 
         @Override
         protected Integer doInBackground(String... params) {
@@ -119,8 +119,20 @@ public class ActivityDisciplinas extends AppCompatActivity  {
 
         @Override
         protected void onPostExecute(Integer numero) {
-            ArrayAdapter<String> adapter = new ArrayAdapter<>(ActivityDisciplinas.this, android.R.layout.simple_expandable_list_item_1, disciplinasAdapter);
-            disciplinasLV.setAdapter(adapter);
+            if(disciplinasAdapter != null || !disciplinasAdapter.isEmpty()) {
+                ArrayAdapter<String> adapter = new ArrayAdapter<>(ActivityDisciplinas.this, android.R.layout.simple_expandable_list_item_1, disciplinasAdapter);
+                disciplinasLV.setAdapter(adapter);
+            }else{
+                builder = new AlertDialog.Builder(ActivityDisciplinas.this);
+                builder.setTitle("Atenção Professor falha de comunicação com o servidor, o aplicativo será fechado. Obrigado!")
+                        .setPositiveButton(R.string.ok, new DialogInterface.OnClickListener() {
+                            public void onClick(DialogInterface dialog, int id) {
+                                finish();
+                                Intent i = new Intent(ActivityDisciplinas.this, ActivityLogin.class);
+                                startActivity(i);
+                            }
+                        }).create().show();
+            }
         }
     }
 

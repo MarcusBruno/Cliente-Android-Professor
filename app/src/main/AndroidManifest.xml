@@ -40,7 +40,14 @@
         <activity
             android:name=".Views.CadastrarActivity"
             android:label="@string/title_activity_cadastrar"
-            android:theme="@style/AppTheme.NoActionBar"></activity>
+            android:theme="@style/AppTheme.NoActionBar"
+            android:screenOrientation="portrait"/>
+
+        <activity
+            android:name=".Views.RecuperarSenhaActivity"
+            android:label="@string/title_activity_recuperar_senha"
+            android:theme="@style/AppTheme.NoActionBar"
+            android:screenOrientation="portrait"/>
 
         <meta-data
             android:name="com.google.android.maps.v2.AIzaSyCqFP0CohXyH-e6ShmO_bvLoOq7EfyilGQ"

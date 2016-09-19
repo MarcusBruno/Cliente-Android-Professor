@@ -44,8 +44,6 @@ public class ActivityDisciplinaAlunos extends AppCompatActivity implements Googl
 
     private String idFrequency; //Id do diário. Cada chamada aberta recebe um ID do diário.
     private Disciplina disciplina;
-    private Timer timer = new Timer();
-    private Timer timer2 = new Timer();
     private AlertDialog.Builder builder;
     private ServiceHandler sh = new ServiceHandler();
     private MenuItem closeFrequencyAction, openFrequencyAction;
@@ -54,13 +52,15 @@ public class ActivityDisciplinaAlunos extends AppCompatActivity implements Googl
     private String alunosOk="0";
     private boolean status, openFrequency;
     private GoogleApiClient mGoogleApiClient;
-
+    private Timer timer2, timer;
     private ListView alunosLV;
     private ArrayList<Aluno> alunos; //Lista de objetos do tipo aluno
     private ArrayList<String> alunosAdapter; //Lista de alunos do tipo String (ID: Nome).
     private ArrayList<Integer> seletedItems; //Array de alunos selecionados da lista para dar presença de forma manual.
     ArrayList<String> alunosAdapterAux;
-    ArrayList<String> faltasAux;
+    ArrayList<String> presentes = new ArrayList<>();
+    ArrayList<String> ausentes = new ArrayList<>();
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -99,7 +99,7 @@ public class ActivityDisciplinaAlunos extends AppCompatActivity implements Googl
                 builder.setMessage(R.string.message_close_frequency)
                         .setPositiveButton(R.string.yes, new DialogInterface.OnClickListener() {
                             public void onClick(DialogInterface dialog, int id) {
-                                new fecharChamada().execute();
+                                new fecharChamada().execute();//1
                                 closeFrequencyAction.setVisible(false);
                                 openFrequencyAction.setVisible(true);
                             }
@@ -172,7 +172,7 @@ public class ActivityDisciplinaAlunos extends AppCompatActivity implements Googl
             builder.setMessage("A chamada será encerrada!")
                     .setPositiveButton("OK", new DialogInterface.OnClickListener() {
                         public void onClick(DialogInterface dialog, int id) {
-                            new fecharChamada().execute();
+                            new fecharChamada().execute();//2
 
                             finish();
                             Intent i = new Intent(ActivityDisciplinaAlunos.this, ActivityDisciplinas.class);
@@ -232,7 +232,6 @@ public class ActivityDisciplinaAlunos extends AppCompatActivity implements Googl
             ArrayAdapter<String> adapter = new ArrayAdapter<>(ActivityDisciplinaAlunos.this, android.R.layout.simple_expandable_list_item_1, alunosAdapter);
             alunosLV.setAdapter(adapter);
             alunosAdapterAux = alunosAdapter;
-            faltasAux = alunosAdapter;
         }
     }
 
@@ -248,7 +247,6 @@ public class ActivityDisciplinaAlunos extends AppCompatActivity implements Googl
                 System.out.println("Carregando...");
             }
             if (!openFrequency) {
-                // Creating service handler class instance
                 try {
                     List<NameValuePair> param = new ArrayList<NameValuePair>();
                     param.add(new BasicNameValuePair("rp", PROFESSOR.getRp()));
@@ -257,7 +255,6 @@ public class ActivityDisciplinaAlunos extends AppCompatActivity implements Googl
                     param.add(new BasicNameValuePair("latitude", PROFESSOR.getLatitude() + ""));
                     param.add(new BasicNameValuePair("longitude", PROFESSOR.getLongitude() + ""));
 
-                    // Making a request to url and getting response
                     JSONObject jsonObj = new JSONObject(sh.makeServiceCall(Routes.getUrlAbrirChamada(), ServiceHandler.POST, param));
                     idFrequency = jsonObj.getJSONArray("return").getJSONObject(0).getString("id");
                     if (!idFrequency.equalsIgnoreCase("0")) {
@@ -274,27 +271,36 @@ public class ActivityDisciplinaAlunos extends AppCompatActivity implements Googl
         @Override
         protected void onPostExecute(Integer numero) {
             if (openFrequency == true) {
-                timer.schedule(new TimerTask() {
-                    public void run() {
-                        if (openFrequency == true) {
-
-                            new fecharChamada().execute();
-                        }
-
-
-                    }
-                }, 122000);
-                timer2.schedule(new TimerTask() {
-                    @Override
-                    public void run() {
-                        //verificar atualizações.
-                        new buscarAutenticaoRealizadas().execute();
-                    }
-                },15000, 15000);
+                tempoChamada();
+                buscarAutenticacao();
             }
         }
     }
 
+    void tempoChamada(){
+        timer = new Timer();
+        timer.schedule(new TimerTask() {
+            public void run() {
+                if (openFrequency == true) {
+
+                    new fecharChamada().execute();
+                }
+
+
+            }
+        }, 122000);
+    }
+
+    void buscarAutenticacao(){
+        timer2 = new Timer();
+        timer2.schedule(new TimerTask() {
+            @Override
+            public void run() {
+                //verificar atualizações.
+                new buscarAutenticaoRealizadas().execute();
+            }
+        },15000, 15000);
+    }
 
     public class buscarAutenticaoRealizadas extends AsyncTask<String, Integer, Integer> {
 
@@ -316,7 +322,6 @@ public class ActivityDisciplinaAlunos extends AppCompatActivity implements Googl
                 for (int i = 0; i < jsonObj.length(); i++) {
 
                     JSONObject c = jsonObj.getJSONObject(i);
-
                     if(!(alunosOk == "0") && !c.getString("tb_lista_freq_codigo_ra").equalsIgnoreCase("")){
                         alunosOk += ","+ c.getString("tb_lista_freq_codigo_ra");
                         autenticados.add(c.getString("tb_lista_freq_codigo_ra"));
@@ -335,14 +340,9 @@ public class ActivityDisciplinaAlunos extends AppCompatActivity implements Googl
                         }
                     }
                 }
-
-
             } catch (JSONException e) {
                 e.printStackTrace();
             }
-
-
-
             return null;
         }
 
@@ -358,10 +358,6 @@ public class ActivityDisciplinaAlunos extends AppCompatActivity implements Googl
     public class fecharChamada extends AsyncTask<String, Integer, Integer> {
         @Override
         protected void onPreExecute() {
-            timer.purge();
-            timer.cancel();
-            timer2.purge();
-            timer2.cancel();
             alunosOk = "";
         }
 
@@ -381,7 +377,7 @@ public class ActivityDisciplinaAlunos extends AppCompatActivity implements Googl
             builder = new AlertDialog.Builder(ActivityDisciplinaAlunos.this);
             closeFrequencyAction.setVisible(false);
             openFrequencyAction.setVisible(false);
-            builder.setMessage("Chamada concluída com sucesso! Deseja adicionar algum aluno manualmente?")
+            builder.setMessage("Chamada concluída com sucessos! Deseja adicionar algum aluno manualmente?")
                     .setPositiveButton(R.string.yes, new DialogInterface.OnClickListener() {
                         public void onClick(DialogInterface dialog, int id) {
                             alertAdcPresencaManual();
@@ -389,8 +385,9 @@ public class ActivityDisciplinaAlunos extends AppCompatActivity implements Googl
                     }).setNegativeButton(R.string.no, new DialogInterface.OnClickListener() {
                 @Override
                 public void onClick(DialogInterface dialog, int which) {
-                    idFrequency = null;
-                    alunosOk = null;
+
+                    timer.cancel();
+                    timer2.cancel();
                     finish();
                     Intent i = new Intent(ActivityDisciplinaAlunos.this, ActivityDisciplinas.class);
                     startActivity(i);
@@ -419,7 +416,11 @@ public class ActivityDisciplinaAlunos extends AppCompatActivity implements Googl
                     @Override
                     public void onClick(DialogInterface dialog, int id) {
                         Toast.makeText(ActivityDisciplinaAlunos.this, seletedItems.toString(), Toast.LENGTH_SHORT).show();
-                        new adcPresencaManual().execute();
+                        if(seletedItems.size() > 0) {
+                            new adcPresencasManual().execute();
+                        }else{
+                            alertAdcPresencaManual();
+                        }
                     }
                 }).setNegativeButton("Cancelar", new DialogInterface.OnClickListener() {
                     @Override
@@ -433,9 +434,7 @@ public class ActivityDisciplinaAlunos extends AppCompatActivity implements Googl
                             @Override
                             public void onClick(DialogInterface dialog, int which) {
 
-                                finish();
-                                Intent i = new Intent(ActivityDisciplinaAlunos.this, ActivityDisciplinas.class);
-                                startActivity(i);
+                                new adcPresencasManual().execute();
 
                             }
                         }).create().show();
@@ -444,99 +443,119 @@ public class ActivityDisciplinaAlunos extends AppCompatActivity implements Googl
         dialog.show();
     }
 
-    public class adcPresencaManual extends AsyncTask<String, Integer, Integer> {
+    public class adcPresencasManual extends AsyncTask<String, Integer, Integer> {
+
         @Override
-        protected void onPreExecute() {
-            timer.purge();
-        }
+        protected void onPreExecute() {}
 
         @Override
         protected Integer doInBackground(String... params) {
-            int lengthItens = (seletedItems.size() - 1);
-            while (lengthItens >= 0) {
-                List<NameValuePair> param = new ArrayList<NameValuePair>();
-                param.add(new BasicNameValuePair("tb_lista_freq_codigo_ra", alunosAdapter.get(seletedItems.get(lengthItens)).split(":")[0]));
-                param.add(new BasicNameValuePair("tb_lista_freq_codigo_rp", PROFESSOR.getRp()));
-                param.add(new BasicNameValuePair("tb_lista_freq_codigo_disciplina", disciplina.getCodigo()));
-                param.add(new BasicNameValuePair("tb_lista_freq_id_diario", idFrequency));
-                param.add(new BasicNameValuePair("tb_lista_freq_latitude_aluno", PROFESSOR.getLatitude() + ""));
-                param.add(new BasicNameValuePair("tb_lista_freq_longitude_aluno", PROFESSOR.getLongitude() + ""));
-                param.add(new BasicNameValuePair("tb_lista_freq_presenca", "1"));
-
-                sh.makeServiceCall(Routes.getUrlAdcPresencaAlunosManual(), ServiceHandler.POST, param);
-                lengthItens--;
-            }
-
-            if(faltasAux.size() != 0){
-
-                //do{
-
-
-                    for(int i=0; i<=seletedItems.size(); i++){
-                        int teste = Integer.parseInt(seletedItems.get(i).toString());
-                        String teste2 = alunosAdapterAux.get(teste).split(":")[0];
-                        for(int j=0; j<=faltasAux.size(); j++) {
-                            if (faltasAux.get(j).split(":")[0].equalsIgnoreCase(teste2)) {
-                                faltasAux.remove(j);
+            if (alunosAdapterAux.size() > 0) {
+                if (seletedItems != null && seletedItems.size() > 0) {
+                    for (int i = 0; i < seletedItems.size(); i++) {
+                        String teste = alunosAdapterAux.get(Integer.parseInt(seletedItems.get(i).toString())).split(":")[0];
+                        for (int j = 0; j < alunosAdapterAux.size(); j++) {
+                            if (teste.equalsIgnoreCase(alunosAdapterAux.get(j).split(":")[0])) {
+                                presentes.add(alunosAdapterAux.get(j).split(":")[0]);
                                 break;
                             }
                         }
                     }
 
-                   /* for(int i=0; i<=seletedItems.size(); i++){
-                        for(int j=0; j<=faltasAux.size(); j++){
-                            String teste = faltasAux.get(Integer.parseInt(seletedItems.get(i).toString())).split(":")[0];
-                            if(faltasAux.get(j).split(":")[0].equalsIgnoreCase(teste)){
-                                faltas.remove(j);
+                    int lengthItens = (presentes.size() - 1);
+                    while (lengthItens >= 0) {
+                        List<NameValuePair> param = new ArrayList<NameValuePair>();
+                        param.add(new BasicNameValuePair("tb_lista_freq_codigo_ra", presentes.get(lengthItens)));
+                        param.add(new BasicNameValuePair("tb_lista_freq_codigo_rp", PROFESSOR.getRp()));
+                        param.add(new BasicNameValuePair("tb_lista_freq_codigo_disciplina", disciplina.getCodigo()));
+                        param.add(new BasicNameValuePair("tb_lista_freq_id_diario", idFrequency));
+                        param.add(new BasicNameValuePair("tb_lista_freq_latitude_aluno", PROFESSOR.getLatitude() + ""));
+                        param.add(new BasicNameValuePair("tb_lista_freq_longitude_aluno", PROFESSOR.getLongitude() + ""));
+                        param.add(new BasicNameValuePair("tb_lista_freq_presenca", "1"));
+
+                        JSONObject jsonObj;
+                        try {
+                            jsonObj = new JSONObject(sh.makeServiceCall(Routes.getUrlAdcPresencaAlunosManual(), ServiceHandler.POST, param));
+
+                            if (!jsonObj.getString("status").equalsIgnoreCase("0")) {
+                                System.out.println(jsonObj.getString("message"));
                             }
+                        } catch (JSONException e) {
+                            e.printStackTrace();
                         }
+                        lengthItens--;
                     }
-                    for(int i=0; i<=faltas.size(); i++){
-                        String teste = faltasAux.get(Integer.parseInt(seletedItems.get(i).toString())).split(":")[0];
-                        for(int j=0; j<= faltas.size(); j++){
-                            if(faltas.get(j).split(":")[0].equalsIgnoreCase(teste)){
-                                faltasAux.remove(i);
-                                break;
-                            }
-                        }
-                    }*/
-
-
-               // }while (seletedItems.size() != flag );
-
-
-                int loop = faltasAux.size();
-                while (loop >= 0) {
-                    List<NameValuePair> param = new ArrayList<NameValuePair>();
-                    param.add(new BasicNameValuePair("tb_lista_freq_codigo_ra", faltasAux.get(seletedItems.get(loop)).split(":")[0]));
-                    param.add(new BasicNameValuePair("tb_lista_freq_codigo_rp", PROFESSOR.getRp()));
-                    param.add(new BasicNameValuePair("tb_lista_freq_codigo_disciplina", disciplina.getCodigo()));
-                    param.add(new BasicNameValuePair("tb_lista_freq_id_diario", idFrequency));
-                    param.add(new BasicNameValuePair("tb_lista_freq_latitude_aluno", PROFESSOR.getLatitude() + ""));
-                    param.add(new BasicNameValuePair("tb_lista_freq_longitude_aluno", PROFESSOR.getLongitude() + ""));
-                    param.add(new BasicNameValuePair("tb_lista_freq_presenca", "0"));
-
-                    sh.makeServiceCall(Routes.getUrlAdcPresencaAlunosManual(), ServiceHandler.POST, param);
-                    loop--;
                 }
             }
-
             return null;
         }
 
         @Override
         protected void onPostExecute(Integer numero) {
-            builder = new AlertDialog.Builder(ActivityDisciplinaAlunos.this);
+
+            timer.cancel();
+            timer2.cancel();
+            new adcFaltasManual().execute();
+        }
+    }
+
+    public class adcFaltasManual extends AsyncTask<String, Integer, Integer> {
+
+        @Override
+        protected void onPreExecute() {}
+
+        @Override
+        protected Integer doInBackground(String... params) {
+            if(alunosAdapterAux.size() >0){
+                if(seletedItems.size() < alunosAdapterAux.size()){
+                    for(int i=0; i<alunosAdapterAux.size(); i++){
+                        if(!presentes.contains(alunosAdapterAux.get(i).split(":")[0])){
+                            ausentes.add(alunosAdapterAux.get(i).split(":")[0]);
+                        }
+                    }
+
+                    int loop = (ausentes.size()- 1);
+                    while (loop >= 0) {
+                        List<NameValuePair> param = new ArrayList<NameValuePair>();
+                        param.add(new BasicNameValuePair("tb_lista_freq_codigo_ra", ausentes.get(loop)));
+                        param.add(new BasicNameValuePair("tb_lista_freq_codigo_rp", PROFESSOR.getRp()));
+                        param.add(new BasicNameValuePair("tb_lista_freq_codigo_disciplina", disciplina.getCodigo()));
+                        param.add(new BasicNameValuePair("tb_lista_freq_id_diario", idFrequency));
+                        param.add(new BasicNameValuePair("tb_lista_freq_latitude_aluno", PROFESSOR.getLatitude() + ""));
+                        param.add(new BasicNameValuePair("tb_lista_freq_longitude_aluno", PROFESSOR.getLongitude() + ""));
+                        param.add(new BasicNameValuePair("tb_lista_freq_presenca", "0"));
+
+                        sh.makeServiceCall(Routes.getUrlAdcPresencaAlunosManual(), ServiceHandler.POST, param);
+                        loop--;
+                    }
+                }
+            }
+            return null;
+        }
+
+        @Override
+        protected void onPostExecute(Integer numero) {
+            /*builder = new AlertDialog.Builder(ActivityDisciplinaAlunos.this);
             builder.setMessage("Chamada concluída com sucesso!")
                     .setPositiveButton(R.string.ok, new DialogInterface.OnClickListener() {
                         public void onClick(DialogInterface dialog, int id) {
-                            idFrequency=null;
-                            alunosOk = null;
+
+                            timer.cancel();
+                            timer2.cancel();
+
                             finish();
                             Intent i = new Intent(ActivityDisciplinaAlunos.this, ActivityDisciplinas.class);
                             startActivity(i);
                         }
-                    }).create().show();
+                    }).create().show();*/
+
+
+            timer.cancel();
+            timer2.cancel();
+
+            finish();
+            Intent i = new Intent(ActivityDisciplinaAlunos.this, ActivityDisciplinas.class);
+            startActivity(i);
         }
     }
 
