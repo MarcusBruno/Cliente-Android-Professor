@@ -58,8 +58,6 @@ public class ActivityDisciplinas extends AppCompatActivity  {
 
         new getDisciplinas().execute();
         new checarChamadasAbertas().execute();
-
-
     }
 
     @Override
@@ -146,8 +144,8 @@ public class ActivityDisciplinas extends AppCompatActivity  {
         menu.setHeaderTitle("Opções ");
         //GroupID - ItemId - OrderForId
         menu.add(0, 1, 0, "Realizar Chamada");
-        menu.add(0, 2, 1, "Agendar Chamada");
-        menu.add(0, 3, 2, "Enviar Notificação aos Alunos");
+        //menu.add(0, 2, 1, "Agendar Chamada");
+        //menu.add(0, 3, 2, "Enviar Notificação aos Alunos");
     }
 
     @Override

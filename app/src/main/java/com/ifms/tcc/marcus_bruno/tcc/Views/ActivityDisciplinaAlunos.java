@@ -49,7 +49,7 @@ public class ActivityDisciplinaAlunos extends AppCompatActivity implements Googl
     private MenuItem closeFrequencyAction, openFrequencyAction;
     protected static final Professor PROFESSOR = ActivityLogin.PROFESSOR;
     private LocationRequest loc;
-    private String alunosOk="0";
+    private String alunosPresentes ="\"\"";
     private boolean status, openFrequency;
     private GoogleApiClient mGoogleApiClient;
     private Timer timer2, timer;
@@ -172,8 +172,7 @@ public class ActivityDisciplinaAlunos extends AppCompatActivity implements Googl
             builder.setMessage("A chamada será encerrada!")
                     .setPositiveButton("OK", new DialogInterface.OnClickListener() {
                         public void onClick(DialogInterface dialog, int id) {
-                            new fecharChamada().execute();//2
-
+                            new fecharChamada().execute();
                             finish();
                             Intent i = new Intent(ActivityDisciplinaAlunos.this, ActivityDisciplinas.class);
                             startActivity(i);
@@ -187,7 +186,6 @@ public class ActivityDisciplinaAlunos extends AppCompatActivity implements Googl
             finish();
             Intent i = new Intent(ActivityDisciplinaAlunos.this, ActivityDisciplinas.class);
             startActivity(i);
-
         }
     }
 
@@ -197,7 +195,7 @@ public class ActivityDisciplinaAlunos extends AppCompatActivity implements Googl
         PROFESSOR.setLongitude(location.getLongitude() + "");
     }
 
-    public class getAlunosDaDisciplina extends AsyncTask<String, Integer, Integer> {
+    private class getAlunosDaDisciplina extends AsyncTask<String, Integer, Integer> {
         @Override
         protected void onPreExecute() {
         }
@@ -235,7 +233,7 @@ public class ActivityDisciplinaAlunos extends AppCompatActivity implements Googl
         }
     }
 
-    public class abrirChamada extends AsyncTask<String, Integer, Integer> {
+    private class abrirChamada extends AsyncTask<String, Integer, Integer> {
         @Override
         protected void onPreExecute() {
         }
@@ -277,32 +275,7 @@ public class ActivityDisciplinaAlunos extends AppCompatActivity implements Googl
         }
     }
 
-    void tempoChamada(){
-        timer = new Timer();
-        timer.schedule(new TimerTask() {
-            public void run() {
-                if (openFrequency == true) {
-
-                    new fecharChamada().execute();
-                }
-
-
-            }
-        }, 122000);
-    }
-
-    void buscarAutenticacao(){
-        timer2 = new Timer();
-        timer2.schedule(new TimerTask() {
-            @Override
-            public void run() {
-                //verificar atualizações.
-                new buscarAutenticaoRealizadas().execute();
-            }
-        },15000, 15000);
-    }
-
-    public class buscarAutenticaoRealizadas extends AsyncTask<String, Integer, Integer> {
+    private class buscarAutenticaoRealizadas extends AsyncTask<String, Integer, Integer> {
 
         @Override
         protected void onPreExecute() {}
@@ -312,21 +285,19 @@ public class ActivityDisciplinaAlunos extends AppCompatActivity implements Googl
             ArrayList<String> autenticados = new ArrayList<>();
             List<NameValuePair> param = new ArrayList<NameValuePair>();
             param.add(new BasicNameValuePair("diario", idFrequency));
-            param.add(new BasicNameValuePair("alunos", alunosOk));
-            System.out.println(alunosOk);
+            param.add(new BasicNameValuePair("alunos", alunosPresentes));
 
-
-            try {
+             try {
 
                 JSONArray jsonObj = new JSONArray(sh.makeServiceCall(Routes.getUrlBuscarAutenticacoesRealizadas(), ServiceHandler.POST, param));
                 for (int i = 0; i < jsonObj.length(); i++) {
 
                     JSONObject c = jsonObj.getJSONObject(i);
-                    if(!(alunosOk == "0") && !c.getString("tb_lista_freq_codigo_ra").equalsIgnoreCase("")){
-                        alunosOk += ","+ c.getString("tb_lista_freq_codigo_ra");
+                    if(!(alunosPresentes == "\"\"") && !c.getString("tb_lista_freq_codigo_ra").equalsIgnoreCase("")){
+                        alunosPresentes += ","+ c.getString("tb_lista_freq_codigo_ra");
                         autenticados.add(c.getString("tb_lista_freq_codigo_ra"));
                     }else{
-                        alunosOk = c.getString("tb_lista_freq_codigo_ra");
+                        alunosPresentes = c.getString("tb_lista_freq_codigo_ra");
                         autenticados.add(c.getString("tb_lista_freq_codigo_ra"));
                     }
                 }
@@ -354,11 +325,10 @@ public class ActivityDisciplinaAlunos extends AppCompatActivity implements Googl
         }
     }
 
-
-    public class fecharChamada extends AsyncTask<String, Integer, Integer> {
+    private class fecharChamada extends AsyncTask<String, Integer, Integer> {
         @Override
         protected void onPreExecute() {
-            alunosOk = "";
+            alunosPresentes = "";
         }
 
         @Override
@@ -443,7 +413,7 @@ public class ActivityDisciplinaAlunos extends AppCompatActivity implements Googl
         dialog.show();
     }
 
-    public class adcPresencasManual extends AsyncTask<String, Integer, Integer> {
+    private class adcPresencasManual extends AsyncTask<String, Integer, Integer> {
 
         @Override
         protected void onPreExecute() {}
@@ -499,7 +469,7 @@ public class ActivityDisciplinaAlunos extends AppCompatActivity implements Googl
         }
     }
 
-    public class adcFaltasManual extends AsyncTask<String, Integer, Integer> {
+    private class adcFaltasManual extends AsyncTask<String, Integer, Integer> {
 
         @Override
         protected void onPreExecute() {}
@@ -548,8 +518,6 @@ public class ActivityDisciplinaAlunos extends AppCompatActivity implements Googl
                             startActivity(i);
                         }
                     }).create().show();*/
-
-
             timer.cancel();
             timer2.cancel();
 
@@ -559,7 +527,7 @@ public class ActivityDisciplinaAlunos extends AppCompatActivity implements Googl
         }
     }
 
-    void configuracoes() {
+    private void configuracoes() {
 
         loc = LocationRequest.create();
         loc.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
@@ -573,5 +541,30 @@ public class ActivityDisciplinaAlunos extends AppCompatActivity implements Googl
             status = false;
         }
 
+    }
+
+    private void tempoChamada(){
+        timer = new Timer();
+        timer.schedule(new TimerTask() {
+            public void run() {
+                if (openFrequency == true) {
+
+                    new fecharChamada().execute();
+                }
+
+
+            }
+        }, 122000);
+    }
+
+    private void buscarAutenticacao(){
+        timer2 = new Timer();
+        timer2.schedule(new TimerTask() {
+            @Override
+            public void run() {
+                //verificar atualizações.
+                new buscarAutenticaoRealizadas().execute();
+            }
+        },15000, 15000);
     }
 }

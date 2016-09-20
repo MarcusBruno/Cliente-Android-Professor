@@ -1,6 +1,9 @@
 package com.ifms.tcc.marcus_bruno.tcc.Models;
 
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.TimeZone;
 
 /**
  * Created by marcusbruno on 12/09/16.
