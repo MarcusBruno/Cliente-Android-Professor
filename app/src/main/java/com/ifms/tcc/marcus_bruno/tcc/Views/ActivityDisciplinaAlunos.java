@@ -76,8 +76,8 @@ public class ActivityDisciplinaAlunos extends AppCompatActivity implements Googl
 
         mGoogleApiClient = new GoogleApiClient.Builder(this)
                 .addApi(LocationServices.API)
-                .addConnectionCallbacks(ActivityDisciplinaAlunos.this)
-                .addOnConnectionFailedListener(ActivityDisciplinaAlunos.this).build();
+                .addConnectionCallbacks(this)
+                .addOnConnectionFailedListener(this).build();
 
         new getAlunosDaDisciplina().execute();
     }
@@ -535,7 +535,7 @@ public class ActivityDisciplinaAlunos extends AppCompatActivity implements Googl
         loc.setFastestInterval(1 * 1000);
         LocationServices.FusedLocationApi.requestLocationUpdates(mGoogleApiClient, loc, ActivityDisciplinaAlunos.this);
 
-
+        //Caso a activity reinicie ele não abrirá a chamada novamente.
         if (status) {
             new abrirChamada().execute();
             status = false;
