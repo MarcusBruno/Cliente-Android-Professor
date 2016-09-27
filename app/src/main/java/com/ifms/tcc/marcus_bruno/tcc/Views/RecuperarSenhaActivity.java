@@ -29,7 +29,6 @@ import java.util.List;
 public class RecuperarSenhaActivity extends AppCompatActivity {
 
     ServiceHandler sh = new ServiceHandler();
-    private AlertDialog.Builder builder;
     EditText etRecuperarSenhaRP;
     Button btnRecuperarSenhaRP, btnCadastrar;
     String codigoSegurancaSistema;
@@ -113,7 +112,7 @@ public class RecuperarSenhaActivity extends AppCompatActivity {
 
                                 alertDialog.setCancelable(true);
                                 if(input.getText().toString().equalsIgnoreCase(codigoSegurancaSistema)){
-                                    inserirNovaSenha();
+                                    validarCodigoSeguranca();
                                 }else{
 
                                 }
@@ -172,7 +171,7 @@ public class RecuperarSenhaActivity extends AppCompatActivity {
     }
 
 
-    void inserirNovaSenha(){
+    void validarCodigoSeguranca(){
 
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         LayoutInflater inflater = this.getLayoutInflater();
@@ -194,14 +193,13 @@ public class RecuperarSenhaActivity extends AppCompatActivity {
                 }
             }
         });
-
         builder.create().show();
     }
 
     @Override
     public void onBackPressed() {
         finish();
-        Intent i = new Intent(this, ActivityLogin.class);
+        Intent i = new Intent(RecuperarSenhaActivity.this, ActivityLogin.class);
         startActivity(i);
     }
 

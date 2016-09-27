@@ -26,6 +26,7 @@ import com.ifms.tcc.marcus_bruno.tcc.Models.Aluno;
 import com.ifms.tcc.marcus_bruno.tcc.Models.Disciplina;
 import com.ifms.tcc.marcus_bruno.tcc.Models.Professor;
 import com.ifms.tcc.marcus_bruno.tcc.R;
+import com.ifms.tcc.marcus_bruno.tcc.Utils.DetectaConexao;
 import com.ifms.tcc.marcus_bruno.tcc.Utils.Routes;
 import com.ifms.tcc.marcus_bruno.tcc.Utils.ServiceHandler;
 
@@ -40,7 +41,7 @@ import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
 
-public class ActivityDisciplinaAlunos extends AppCompatActivity implements GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener, LocationListener {
+public class ActivityDisciplinaAlunos extends AppCompatActivity  {
 
     private String idFrequency; //Id do diário. Cada chamada aberta recebe um ID do diário.
     private Disciplina disciplina;
@@ -48,18 +49,13 @@ public class ActivityDisciplinaAlunos extends AppCompatActivity implements Googl
     private ServiceHandler sh = new ServiceHandler();
     private MenuItem closeFrequencyAction, openFrequencyAction;
     protected static final Professor PROFESSOR = ActivityLogin.PROFESSOR;
-    private LocationRequest loc;
-    private String alunosPresentes ="\"\"";
-    private boolean status, openFrequency;
-    private GoogleApiClient mGoogleApiClient;
-    private Timer timer2, timer;
+    private String concatStrAlunosPresentes ="\"\"";
+    private boolean openFrequency;
+    private Timer timerBuscarAutenticacao, timerDuracaoChamada;
     private ListView alunosLV;
-    private ArrayList<Aluno> alunos; //Lista de objetos do tipo aluno
-    private ArrayList<String> alunosAdapter; //Lista de alunos do tipo String (ID: Nome).
     private ArrayList<Integer> seletedItems; //Array de alunos selecionados da lista para dar presença de forma manual.
-    ArrayList<String> alunosAdapterAux;
-    ArrayList<String> presentes = new ArrayList<>();
-    ArrayList<String> ausentes = new ArrayList<>();
+    //alunosAdapter = Lista de alunos do tipo String (ID: Nome).
+    ArrayList<String> alunosAdapter, alunosAdapterAux,presentes, ausentes;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -70,16 +66,23 @@ public class ActivityDisciplinaAlunos extends AppCompatActivity implements Googl
 
         Intent i = getIntent();
         disciplina = (Disciplina) i.getSerializableExtra("disciplina");
-        status = (boolean) i.getSerializableExtra("status");
         alunosLV = (ListView) findViewById(R.id.list_view_lista_alunuos_disciplina);
+        presentes = new ArrayList<>();
+        ausentes = new ArrayList<>();
 
-
-        mGoogleApiClient = new GoogleApiClient.Builder(this)
-                .addApi(LocationServices.API)
-                .addConnectionCallbacks(this)
-                .addOnConnectionFailedListener(this).build();
-
-        new getAlunosDaDisciplina().execute();
+        if (!new DetectaConexao(ActivityDisciplinaAlunos.this).existeConexao() || !new DetectaConexao(ActivityDisciplinaAlunos.this).localizacaoAtiva()) {
+            builder.setMessage("Você deve ativar sua conexão com a internet e a localização do seu aparelho!")
+                    .setPositiveButton(R.string.ok, new DialogInterface.OnClickListener() {
+                        public void onClick(DialogInterface dialog, int id) {
+                            finish();
+                            Intent i = new Intent(ActivityDisciplinaAlunos.this, ActivityDisciplinas.class);
+                            startActivity(i);
+                        }
+                    }).create().show();
+        }else{
+            new getAlunosDaDisciplina().execute();
+            new abrirChamada().execute();
+        }
     }
 
     @Override
@@ -126,47 +129,8 @@ public class ActivityDisciplinaAlunos extends AppCompatActivity implements Googl
         }
     }
 
-    protected void onStart() {
-        super.onStart();
-        mGoogleApiClient.connect();
-    }
-
-    protected void onResume() {
-        super.onResume();
-        if (!mGoogleApiClient.isConnected() || !mGoogleApiClient.isConnecting()) {
-            mGoogleApiClient.connect();
-        }
-    }
-
-    protected void onStop() {
-        super.onStop();
-        if (mGoogleApiClient != null && mGoogleApiClient.isConnected()) {
-            LocationServices.FusedLocationApi.removeLocationUpdates(mGoogleApiClient, this);
-            mGoogleApiClient.disconnect();
-        }
-    }
-
-    @Override
-    public void onConnected(@Nullable Bundle bundle) {
-        configuracoes();
-    }
-
-    @Override
-    public void onConnectionSuspended(int i) {
-        mGoogleApiClient.connect();
-    }
-
-    @Override
-    public void onConnectionFailed(@NonNull ConnectionResult connectionResult) {
-        mGoogleApiClient.clearDefaultAccountAndReconnect();
-    }
-
     @Override
     public void onBackPressed() {
-        if (mGoogleApiClient != null && mGoogleApiClient.isConnected()) {
-            mGoogleApiClient.disconnect();
-        }
-
         if (openFrequency == true) {
             builder = new AlertDialog.Builder(ActivityDisciplinaAlunos.this);
             builder.setMessage("A chamada será encerrada!")
@@ -189,33 +153,22 @@ public class ActivityDisciplinaAlunos extends AppCompatActivity implements Googl
         }
     }
 
-    @Override
-    public void onLocationChanged(Location location) {
-        PROFESSOR.setLatitude(location.getLatitude() + "");
-        PROFESSOR.setLongitude(location.getLongitude() + "");
-    }
-
     private class getAlunosDaDisciplina extends AsyncTask<String, Integer, Integer> {
         @Override
-        protected void onPreExecute() {
-        }
+        protected void onPreExecute() {}
 
         @Override
         protected Integer doInBackground(String... params) {
-            // Creating service handler class instance
             try {
                 List<NameValuePair> param = new ArrayList<NameValuePair>();
                 param.add(new BasicNameValuePair("id", disciplina.getCodigo()));
 
-                // Making a request to url and getting response
                 JSONArray jsonObj = new JSONArray(sh.makeServiceCall(Routes.getUrlBuscarAlunos(), ServiceHandler.POST, param));
-                alunos = new ArrayList<>();
                 alunosAdapter = new ArrayList<>();
 
                 for (int i = 0; i < jsonObj.length(); i++) {
                     JSONObject c = jsonObj.getJSONObject(i);
                     Aluno a = new Aluno(c.getString("tb_alu_ra"), c.getString("tb_alu_nome"), c.getString("tb_alu_telefone"), c.getString("tb_alu_email"), c.getString("tb_alu_mac_address"));
-                    alunos.add(a);
                     alunosAdapter.add(a.getRa() + ": " + a.getNome());
                 }
             } catch (JSONException e) {
@@ -235,15 +188,10 @@ public class ActivityDisciplinaAlunos extends AppCompatActivity implements Googl
 
     private class abrirChamada extends AsyncTask<String, Integer, Integer> {
         @Override
-        protected void onPreExecute() {
-        }
+        protected void onPreExecute() { }
 
         @Override
         protected Integer doInBackground(String... params) {
-
-            while (PROFESSOR.getLatitude() == null || PROFESSOR.getLongitude() == null ){
-                System.out.println("Carregando...");
-            }
             if (!openFrequency) {
                 try {
                     List<NameValuePair> param = new ArrayList<NameValuePair>();
@@ -285,19 +233,17 @@ public class ActivityDisciplinaAlunos extends AppCompatActivity implements Googl
             ArrayList<String> autenticados = new ArrayList<>();
             List<NameValuePair> param = new ArrayList<NameValuePair>();
             param.add(new BasicNameValuePair("diario", idFrequency));
-            param.add(new BasicNameValuePair("alunos", alunosPresentes));
+            param.add(new BasicNameValuePair("alunos", concatStrAlunosPresentes));
 
              try {
-
                 JSONArray jsonObj = new JSONArray(sh.makeServiceCall(Routes.getUrlBuscarAutenticacoesRealizadas(), ServiceHandler.POST, param));
                 for (int i = 0; i < jsonObj.length(); i++) {
-
                     JSONObject c = jsonObj.getJSONObject(i);
-                    if(!(alunosPresentes == "\"\"") && !c.getString("tb_lista_freq_codigo_ra").equalsIgnoreCase("")){
-                        alunosPresentes += ","+ c.getString("tb_lista_freq_codigo_ra");
+                    if(!(concatStrAlunosPresentes == "\"\"") && !c.getString("tb_lista_freq_codigo_ra").equalsIgnoreCase("")){
+                        concatStrAlunosPresentes += ","+ c.getString("tb_lista_freq_codigo_ra");
                         autenticados.add(c.getString("tb_lista_freq_codigo_ra"));
                     }else{
-                        alunosPresentes = c.getString("tb_lista_freq_codigo_ra");
+                        concatStrAlunosPresentes = c.getString("tb_lista_freq_codigo_ra");
                         autenticados.add(c.getString("tb_lista_freq_codigo_ra"));
                     }
                 }
@@ -307,7 +253,6 @@ public class ActivityDisciplinaAlunos extends AppCompatActivity implements Googl
                     for(int j=0; j<autenticados.size(); j++){
                         if(alunosAdapter.get(i).split(":")[0].equalsIgnoreCase(autenticados.get(j))){
                             alunosAdapterAux.remove(i);
-
                         }
                     }
                 }
@@ -328,7 +273,7 @@ public class ActivityDisciplinaAlunos extends AppCompatActivity implements Googl
     private class fecharChamada extends AsyncTask<String, Integer, Integer> {
         @Override
         protected void onPreExecute() {
-            alunosPresentes = "";
+            concatStrAlunosPresentes = "";
         }
 
         @Override
@@ -355,13 +300,7 @@ public class ActivityDisciplinaAlunos extends AppCompatActivity implements Googl
                     }).setNegativeButton(R.string.no, new DialogInterface.OnClickListener() {
                 @Override
                 public void onClick(DialogInterface dialog, int which) {
-
-                    timer.cancel();
-                    timer2.cancel();
-                    finish();
-                    Intent i = new Intent(ActivityDisciplinaAlunos.this, ActivityDisciplinas.class);
-                    startActivity(i);
-
+                    new adcPresencasManual().execute();
                 }
             }).create().show();
         }
@@ -416,7 +355,11 @@ public class ActivityDisciplinaAlunos extends AppCompatActivity implements Googl
     private class adcPresencasManual extends AsyncTask<String, Integer, Integer> {
 
         @Override
-        protected void onPreExecute() {}
+        protected void onPreExecute() {
+            if(seletedItems == null){
+                seletedItems = new ArrayList<>();
+            }
+        }
 
         @Override
         protected Integer doInBackground(String... params) {
@@ -462,9 +405,8 @@ public class ActivityDisciplinaAlunos extends AppCompatActivity implements Googl
 
         @Override
         protected void onPostExecute(Integer numero) {
-
-            timer.cancel();
-            timer2.cancel();
+            timerDuracaoChamada.cancel();
+            timerBuscarAutenticacao.cancel();
             new adcFaltasManual().execute();
         }
     }
@@ -505,66 +447,44 @@ public class ActivityDisciplinaAlunos extends AppCompatActivity implements Googl
 
         @Override
         protected void onPostExecute(Integer numero) {
-            /*builder = new AlertDialog.Builder(ActivityDisciplinaAlunos.this);
-            builder.setMessage("Chamada concluída com sucesso!")
-                    .setPositiveButton(R.string.ok, new DialogInterface.OnClickListener() {
+            builder = new AlertDialog.Builder(ActivityDisciplinaAlunos.this);
+            builder.setMessage("Chamada concluída com sucesso!").setPositiveButton(R.string.ok, new DialogInterface.OnClickListener() {
                         public void onClick(DialogInterface dialog, int id) {
 
-                            timer.cancel();
-                            timer2.cancel();
+                            timerDuracaoChamada.cancel();
+                            timerBuscarAutenticacao.cancel();
 
                             finish();
                             Intent i = new Intent(ActivityDisciplinaAlunos.this, ActivityDisciplinas.class);
                             startActivity(i);
                         }
-                    }).create().show();*/
-            timer.cancel();
-            timer2.cancel();
-
+                    }).create().show();
             finish();
             Intent i = new Intent(ActivityDisciplinaAlunos.this, ActivityDisciplinas.class);
             startActivity(i);
         }
     }
 
-    private void configuracoes() {
-
-        loc = LocationRequest.create();
-        loc.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
-        loc.setInterval(5 * 1000);
-        loc.setFastestInterval(1 * 1000);
-        LocationServices.FusedLocationApi.requestLocationUpdates(mGoogleApiClient, loc, ActivityDisciplinaAlunos.this);
-
-        //Caso a activity reinicie ele não abrirá a chamada novamente.
-        if (status) {
-            new abrirChamada().execute();
-            status = false;
-        }
-
-    }
 
     private void tempoChamada(){
-        timer = new Timer();
-        timer.schedule(new TimerTask() {
+        timerDuracaoChamada = new Timer();
+        timerDuracaoChamada.schedule(new TimerTask() {
             public void run() {
                 if (openFrequency == true) {
-
                     new fecharChamada().execute();
                 }
-
-
             }
-        }, 122000);
+        }, 78000);
     }
 
     private void buscarAutenticacao(){
-        timer2 = new Timer();
-        timer2.schedule(new TimerTask() {
+        timerBuscarAutenticacao = new Timer();
+        timerBuscarAutenticacao.schedule(new TimerTask() {
             @Override
             public void run() {
                 //verificar atualizações.
                 new buscarAutenticaoRealizadas().execute();
             }
-        },15000, 15000);
+        },0, 10000);
     }
 }

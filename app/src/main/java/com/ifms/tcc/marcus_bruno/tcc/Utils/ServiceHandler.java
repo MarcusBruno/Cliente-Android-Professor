@@ -2,6 +2,7 @@ package com.ifms.tcc.marcus_bruno.tcc.Utils;
 
 /**
  * Created by marcus-bruno on 8/13/16.
+ * @source: http://stackoverflow.com/questions/25750610/how-to-go-about-returning-the-status-code-from-my-servicehandler-android-json
  */
 
 import org.apache.http.HttpEntity;

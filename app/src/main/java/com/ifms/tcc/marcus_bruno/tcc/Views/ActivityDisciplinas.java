@@ -3,8 +3,11 @@ package com.ifms.tcc.marcus_bruno.tcc.Views;
 import android.app.AlertDialog;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.location.Location;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.view.ContextMenu;
@@ -16,6 +19,11 @@ import android.widget.ArrayAdapter;
 import android.widget.ListView;
 import android.widget.Toast;
 
+import com.google.android.gms.common.ConnectionResult;
+import com.google.android.gms.common.api.GoogleApiClient;
+import com.google.android.gms.location.LocationListener;
+import com.google.android.gms.location.LocationRequest;
+import com.google.android.gms.location.LocationServices;
 import com.ifms.tcc.marcus_bruno.tcc.Models.Chamada;
 import com.ifms.tcc.marcus_bruno.tcc.Models.Disciplina;
 import com.ifms.tcc.marcus_bruno.tcc.Models.Professor;
@@ -35,7 +43,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.TimeZone;
 
-public class ActivityDisciplinas extends AppCompatActivity  {
+public class ActivityDisciplinas extends AppCompatActivity implements GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener, LocationListener {
 
     private Chamada chamada;
     private int itemSelected;
@@ -44,7 +52,8 @@ public class ActivityDisciplinas extends AppCompatActivity  {
     private ArrayList<Disciplina> disciplinas;
     private ArrayList<String> disciplinasAdapter;
     protected static Professor PROFESSOR = ActivityLogin.PROFESSOR;
-
+    private GoogleApiClient googleApiClient;
+    private LocationRequest locationRequest;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -53,12 +62,56 @@ public class ActivityDisciplinas extends AppCompatActivity  {
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
+
+        googleApiClient = new GoogleApiClient.Builder(this)
+                .addApi(LocationServices.API)
+                .addConnectionCallbacks(this)
+                .addOnConnectionFailedListener(this).build();
+
         disciplinasLV = (ListView) findViewById(R.id.list_view_lista_disciplinas);
         registerForContextMenu(disciplinasLV);
 
         new getDisciplinas().execute();
         new checarChamadasAbertas().execute();
     }
+
+
+    protected void onStart() {
+        super.onStart();
+        googleApiClient.connect();
+    }
+
+    protected void onResume() {
+        super.onResume();
+        if (!googleApiClient.isConnected() || !googleApiClient.isConnecting()) {
+            googleApiClient.connect();
+        }
+    }
+
+    protected void onStop() {
+        super.onStop();
+        if (googleApiClient != null && googleApiClient.isConnected()) {
+            LocationServices.FusedLocationApi.removeLocationUpdates(googleApiClient, this);
+            googleApiClient.disconnect();
+        }
+    }
+
+    @Override
+    public void onConnected(@Nullable Bundle bundle) {
+        configuracaoLocalizacao();
+    }
+
+    @Override
+    public void onConnectionSuspended(int i) {
+        googleApiClient.connect();
+    }
+
+    @Override
+    public void onConnectionFailed(@NonNull ConnectionResult connectionResult) {
+        googleApiClient.clearDefaultAccountAndReconnect();
+    }
+
+
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
@@ -151,12 +204,16 @@ public class ActivityDisciplinas extends AppCompatActivity  {
     @Override
     public boolean onContextItemSelected(MenuItem item) {
         if (item.getItemId() == 1) {
-
-            Intent i = new Intent(ActivityDisciplinas.this, ActivityDisciplinaAlunos.class);
-            i.putExtra("disciplina", disciplinas.get(itemSelected));
-            i.putExtra("status", true);
-            startActivity(i);
-            finish();
+            boolean localizacaoProf = false;
+            while (!localizacaoProf){
+                if(PROFESSOR.getLatitude() != null && PROFESSOR.getLongitude() != null) {
+                    localizacaoProf = true;
+                    Intent i = new Intent(ActivityDisciplinas.this, ActivityDisciplinaAlunos.class);
+                    i.putExtra("disciplina", disciplinas.get(itemSelected));
+                    startActivity(i);
+                    finish();
+                }
+            }
         } else if (item.getItemId() == 2) {
             Toast.makeText(getApplicationContext(), "Opc 2", Toast.LENGTH_LONG).show();
         } else if (item.getItemId() == 3) {
@@ -253,5 +310,21 @@ public class ActivityDisciplinas extends AppCompatActivity  {
                         }
                     }).create().show();
         }
+    }
+
+
+    private void configuracaoLocalizacao() {
+        locationRequest = LocationRequest.create();
+        locationRequest.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
+        locationRequest.setInterval(1 * 1000);
+        locationRequest.setFastestInterval(1 * 1000);
+        LocationServices.FusedLocationApi.requestLocationUpdates(googleApiClient, locationRequest, ActivityDisciplinas.this);
+    }
+
+    @Override
+    public void onLocationChanged(Location location) {
+        PROFESSOR.setLatitude(location.getLatitude() + "");
+        PROFESSOR.setLongitude(location.getLongitude() + "");
+        System.out.println(PROFESSOR.getLatitude() +" - " + PROFESSOR.getLongitude());
     }
 }

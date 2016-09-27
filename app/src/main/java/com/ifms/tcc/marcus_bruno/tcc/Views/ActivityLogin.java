@@ -70,9 +70,9 @@ public class ActivityLogin extends AppCompatActivity {
         loginBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                rp = rpET.getText().toString();
-                passProfessor = passET.getText().toString();
-                if (!rp.equalsIgnoreCase("") && !passProfessor.equalsIgnoreCase("")) {
+                //rp = ;
+                //passProfessor = ;
+                if (!rpET.getText().toString().equalsIgnoreCase("") && !passET.getText().toString().equalsIgnoreCase("")) {
                     new AutenticarLogin().execute();
                 } else {
                     builder.setMessage(R.string.message_required_inputs_login)
@@ -112,8 +112,8 @@ public class ActivityLogin extends AppCompatActivity {
         @Override
         protected Integer doInBackground(String... params) {
             List<NameValuePair> pairs = new ArrayList<NameValuePair>();
-            pairs.add(new BasicNameValuePair("rp", rp));
-            pairs.add(new BasicNameValuePair("senha", passProfessor));
+            pairs.add(new BasicNameValuePair("rp", rpET.getText().toString()));
+            pairs.add(new BasicNameValuePair("senha", passET.getText().toString()));
 
             ServiceHandler sh = new ServiceHandler();
             try {
@@ -125,7 +125,7 @@ public class ActivityLogin extends AppCompatActivity {
                     //Tratamento em caso do objeto retornar null;
                     if (!jsonObj.equals("")) {
                         //Get status of response;
-                        String status = jsonObj.getJSONArray("status").getJSONObject(0).getString("status");
+                        String status = jsonObj.getString("status");
                         if (!status.equalsIgnoreCase("0")) {
                             // Getting data teacher of array in position 0.
                             JSONObject c = jsonObj.getJSONArray("message").getJSONObject(0);
